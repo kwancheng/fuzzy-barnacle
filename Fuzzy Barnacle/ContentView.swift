@@ -10,10 +10,13 @@ import SwiftData
 
 /// Open water. Press anywhere and a barnacle settles there; hold and
 /// one lets go. The colony is the record — every press is a moment
-/// that decided to stay.
+/// that decided to stay. And the water keeps time: the creatures grow,
+/// they slow with age, and where one has let go, a trace remains
+/// a while before the water forgets it.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
+    @Query(sort: \Ghost.departedAt) private var ghosts: [Ghost]
 
     @State private var pressStart: Date?
     @State private var ripples: [Ripple] = []
@@ -53,6 +56,20 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .task {
+            // the water forgets: traces are kept for a while, then gone
+            while !Task.isCancelled {
+                pruneGhosts()
+                try? await Task.sleep(for: .seconds(20))
+            }
+        }
+    }
+
+    private func pruneGhosts() {
+        let cutoff = Date.now.addingTimeInterval(-170)
+        for ghost in ghosts where ghost.departedAt < cutoff {
+            modelContext.delete(ghost)
+        }
     }
 
     private var canvas: some View {
@@ -64,6 +81,9 @@ struct ContentView: View {
                     let presence = fingerPresence(now: now)
                     drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
                     drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence)
+                    for ghost in ghosts {
+                        drawGhost(&context, ghost, size: size, now: now)
+                    }
                     for barnacle in barnacles {
                         drawBarnacle(&context, barnacle, size: size, now: now, t: t, fingerPoint: fingerPoint, presence: presence)
                     }
@@ -140,6 +160,16 @@ struct ContentView: View {
         }
         guard let nearest, nearestDistance <= 44 else { return }
         spawnRipple(nearest.unitPoint, kind: .pryOff)
+        // the water does not forget at once: the trace keeps the shape
+        // of the absence, at the size the creature had when it left
+        let trace = Ghost(
+            departedAt: .now,
+            x: nearest.x,
+            y: nearest.y,
+            seed: nearest.seed,
+            size: grownRadius(seed: nearest.seed, size: nearest.size, age: Date.now.timeIntervalSince(nearest.timestamp))
+        )
+        modelContext.insert(trace)
         modelContext.delete(nearest)
     }
 
@@ -168,9 +198,14 @@ struct ContentView: View {
             Text(captionText)
                 .font(.system(.footnote, design: .serif).italic())
                 .foregroundStyle(.white.opacity(0.40))
-            Text("hold a barnacle to let it go")
+            if let ageLine {
+                Text(ageLine)
+                    .font(.system(.caption2, design: .serif).italic())
+                    .foregroundStyle(.white.opacity(0.25))
+            }
+            Text("hold a barnacle to let it go — the water will remember")
                 .font(.system(.caption2, design: .serif).italic())
-                .foregroundStyle(.white.opacity(0.25))
+                .foregroundStyle(.white.opacity(0.20))
         }
         .padding(.bottom, 26)
     }
@@ -181,6 +216,31 @@ struct ContentView: View {
             return "one barnacle has made itself at home"
         default:
             return "\(barnacles.count) barnacles have made themselves at home"
+        }
+    }
+
+    /// The colony keeps its own time: who has been longest here.
+    private var ageLine: String? {
+        guard let oldest = barnacles.map(\.timestamp).min() else { return nil }
+        let age = Date.now.timeIntervalSince(oldest)
+        switch age {
+        case ..<60:
+            return "the eldest among you arrived moments ago"
+        case ..<3600:
+            let minutes = max(1, Int(age / 60))
+            return minutes == 1
+                ? "the eldest arrived a minute ago"
+                : "the eldest arrived \(minutes) minutes ago"
+        case ..<86_400:
+            let hours = Int(age / 3600)
+            return hours == 1
+                ? "the eldest has kept this water for an hour"
+                : "the eldest has kept this water for \(hours) hours"
+        case ..<172_800:
+            return "the eldest has kept this water for a day"
+        default:
+            let days = Int(age / 86_400)
+            return "the eldest has kept this water for \(days) days"
         }
     }
 
@@ -231,6 +291,17 @@ struct ContentView: View {
     private func smoothstep(_ a: Double, _ b: Double, _ x: Double) -> Double {
         let t = max(0, min(1, (x - a) / (b - a)))
         return t * t * (3 - 2 * t)
+    }
+
+    /// A barnacle is not finished when it settles. It arrives small and
+    /// accretes slowly — layer over layer, the way real ones do — to its
+    /// adult size across the first minute of its life. After that it is
+    /// what it is: the size the water remembers it by.
+    private func grownRadius(seed: Int, size: Double, age: Double) -> Double {
+        let adult = size * (1.15 + 0.45 * fuzz(seed, 9))
+        let p = min(1, age / 60)
+        let eased = 1 - pow(1 - p, 2)
+        return size + (adult - size) * eased
     }
 
     /// A dim warm light where the hand is — as if it refracts the light
@@ -332,6 +403,14 @@ struct ContentView: View {
         let settleProgress = min(1, age / 0.9)
         let settleScale = settleProgress >= 1 ? 1 : easeOutBack(settleProgress)
 
+        // accretion: it settled small, and has been growing ever since
+        let grown = grownRadius(seed: seed, size: barnacle.size, age: age)
+
+        // settling into the rock: with age the breathing slows, and the
+        // creature answers the current less eagerly — the old have seen
+        // the tide, and turn to it only when it comes close
+        let ageSettle = smoothstep(120, 1800, age)
+
         // breathing and drifting
         let breathePhase = 2 * .pi * fuzz(seed, 50)
         let driftPhase = 2 * .pi * fuzz(seed, 51)
@@ -351,21 +430,29 @@ struct ContentView: View {
             }
         }
 
-        // a barnacle that feels the current breathes a little deeper
-        let breath = 1 + (0.02 + 0.03 * attention) * sin(t * 0.7 + breathePhase)
+        // a barnacle that feels the current breathes a little deeper —
+        // but a barnacle that has settled into the rock breathes slower
+        let breath = 1
+            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle)
+            * sin(t * (0.7 * (1 - 0.35 * ageSettle)) + breathePhase)
 
         let center = CGPoint(
             x: barnacle.x * size.width + swayX,
             y: barnacle.y * size.height + swayY
         )
-        let radius = barnacle.size * settleScale * breath
+        let radius = grown * settleScale * breath
         guard radius > 0.5 else { return }
 
         let shell = shellColor(seed: seed)
         let plate = plateColor(seed: seed)
+        // with age the colour drains toward the rock it is becoming
+        let agedShell = ageSettle > 0.001
+            ? shell.mix(with: Color(red: 0.30, green: 0.27, blue: 0.23), by: 0.30 * ageSettle)
+            : shell
 
-        // fuzzy halo, swelling softly as the barnacle wakes
-        let haloR = radius * (1.9 + 0.6 * attention)
+        // fuzzy halo, swelling softly as the barnacle wakes — and hugging
+        // closer to the body as it settles into the rock
+        let haloR = radius * (1.9 + 0.6 * attention) * (1 - 0.15 * ageSettle)
         context.fill(
             Path(ellipseIn: CGRect(
                 x: center.x - haloR,
@@ -374,7 +461,7 @@ struct ContentView: View {
                 height: haloR * 2
             )),
             with: .radialGradient(
-                Gradient(colors: [shell.opacity(0.28 + 0.10 * attention), .clear]),
+                Gradient(colors: [agedShell.opacity(0.28 + 0.10 * attention), .clear]),
                 center: center,
                 startRadius: radius * 0.2,
                 endRadius: haloR
@@ -401,7 +488,7 @@ struct ContentView: View {
                 height: lobeRadius * 2
             ))
         }
-        context.fill(body, with: .color(shell))
+        context.fill(body, with: .color(agedShell))
         if attention > 0.01 {
             context.fill(body, with: .color(.white.opacity(0.05 * attention)))
         }
@@ -426,8 +513,9 @@ struct ContentView: View {
             )
         }
 
-        // the orifice at the centre — it dilates toward the current
-        let orif = radius * (0.10 + 0.22 * attention)
+        // the orifice at the centre — it dilates toward the current;
+        // the old, whose patience has run deep, open less
+        let orif = radius * (0.10 + 0.22 * attention * (1 - 0.4 * ageSettle))
         context.fill(
             Path(ellipseIn: CGRect(
                 x: center.x - orif,
@@ -458,10 +546,14 @@ struct ContentView: View {
         }
 
         // cirri: the feathery feeding plumes, reaching into the current
-        // the hand has made — the barnacle tasting its visitor
-        if attention > 0.06 {
+        // the hand has made — the barnacle tasting its visitor.
+        // The young taste everything; the old answer only a hand that
+        // comes close, and then reach shorter, and fainter.
+        let cirriThreshold = 0.04 + 0.10 * ageSettle
+        if attention > cirriThreshold {
+            let beyond = (attention - cirriThreshold) / max(0.25, 1 - cirriThreshold)
             let cirriCount = 6
-            let reach = radius * (0.55 + 0.65 * attention)
+            let reach = radius * (0.55 + 0.65 * beyond)
             for i in 0..<cirriCount {
                 let spread = (Double(i) - Double(cirriCount - 1) / 2) * 0.55
                 let sway = 0.28 * sin(t * 1.1 + breathePhase + Double(i) * 1.31)
@@ -485,7 +577,7 @@ struct ContentView: View {
                 filament.addQuadCurve(to: end, control: ctrl)
                 context.stroke(
                     filament,
-                    with: .color(Color(red: 0.85, green: 0.93, blue: 0.92).opacity(0.30 * attention)),
+                    with: .color(Color(red: 0.85, green: 0.93, blue: 0.92).opacity(0.30 * beyond)),
                     lineWidth: 1.2
                 )
             }
@@ -505,6 +597,49 @@ struct ContentView: View {
                 startRadius: 0,
                 endRadius: radius * 0.45
             )
+        )
+    }
+
+    /// The trace of a barnacle that let go: a mineral rim where its
+    /// shell had been, and the pale surface exposed beneath. It holds
+    /// for a while, then the water slowly forgets it. Unlike the living,
+    /// a trace does not drift — it stays where the creature was.
+    private func drawGhost(_ context: inout GraphicsContext, _ ghost: Ghost, size: CGSize, now: Date) {
+        let age = now.timeIntervalSince(ghost.departedAt)
+        guard age < 150 else { return }
+        // the trace keeps, then dissolves
+        let fade = 1 - smoothstep(40, 150, age)
+        guard fade > 0.001 else { return }
+
+        let center = CGPoint(x: ghost.x * size.width, y: ghost.y * size.height)
+        let r = ghost.size
+
+        // the exposed surface: pale where the body had been
+        context.fill(
+            Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)),
+            with: .radialGradient(
+                Gradient(colors: [
+                    Color(red: 0.84, green: 0.82, blue: 0.74).opacity(0.11 * fade),
+                    .clear,
+                ]),
+                center: center,
+                startRadius: 0,
+                endRadius: r
+            )
+        )
+
+        // the rim: the edge of where it had been
+        var ring = Path()
+        ring.addEllipse(in: CGRect(
+            x: center.x - r * 1.12,
+            y: center.y - r * 1.12,
+            width: r * 2.24,
+            height: r * 2.24
+        ))
+        context.stroke(
+            ring,
+            with: .color(Color(red: 0.88, green: 0.85, blue: 0.76).opacity(0.16 * fade)),
+            lineWidth: 1.5
         )
     }
 
@@ -553,5 +688,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: Barnacle.self, inMemory: true)
+        .modelContainer(for: [Barnacle.self, Ghost.self], inMemory: true)
 }

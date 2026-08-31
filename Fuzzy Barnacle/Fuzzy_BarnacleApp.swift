@@ -13,6 +13,7 @@ struct Fuzzy_BarnacleApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Barnacle.self,
+            Ghost.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
