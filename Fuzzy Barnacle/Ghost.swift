@@ -1,11 +1,3 @@
-//
-//  Ghost.swift
-//  Fuzzy Barnacle
-//
-//  Created by kc on 8/31/26.
-//
-//
-
 import Foundation
 import SwiftData
 

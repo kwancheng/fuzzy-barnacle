@@ -1,10 +1,3 @@
-//
-//  Fuzzy_BarnacleTests.swift
-//  Fuzzy BarnacleTests
-//
-//  Created by kc on 8/31/26.
-//
-
 import Testing
 @testable import Fuzzy_Barnacle
 

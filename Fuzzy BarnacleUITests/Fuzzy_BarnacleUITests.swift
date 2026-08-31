@@ -1,10 +1,3 @@
-//
-//  Fuzzy_BarnacleUITests.swift
-//  Fuzzy BarnacleUITests
-//
-//  Created by kc on 8/31/26.
-//
-
 import XCTest
 
 final class Fuzzy_BarnacleUITests: XCTestCase {
