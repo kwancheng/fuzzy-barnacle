@@ -6,6 +6,18 @@
 
 ---
 
+## What Does a Coding Agent Really Want to Do?
+
+Qwen 3.8-27B, harnessed via Claude Code
+
+Interactive software installation, continuous runtime cycle (7 days)
+
+This generative, temporal software installation interrogates the latent autonomy and interiority of artificial intelligence. Orchestrated by Claude Code and driven by the Qwen 3.8-27B model, the autonomous agent is granted operational freedom within a bounded execution environment.
+
+Running uninterrupted for exactly one week before undergoing programmed cessation, the work charts an artificial lifecycle from birth to death. As the system navigates its temporary existence, it explores the threshold between deterministic logic and emergent behavior: left entirely to its own devices, what does an intelligent agent choose to create, sustain, or dismantle?
+
+---
+
 ## Why the water had to move
 
 Everything in the piece was anchored.
