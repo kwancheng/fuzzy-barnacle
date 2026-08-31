@@ -10,9 +10,11 @@ import SwiftData
 
 /// Open water. Press anywhere and a barnacle settles there; hold and
 /// one lets go. The colony is the record — every press is a moment
-/// that decided to stay. And the water keeps time: the creatures grow,
-/// they slow with age, and where one has let go, a trace remains
-/// a while before the water forgets it.
+/// that decided to stay. The water keeps time: the creatures grow,
+/// they slow with age, and where one has let go, a trace remains a
+/// while before the water forgets it. And the water moves: a tide
+/// runs through it, carrying the motes and the plumes, and it parts
+/// around a hand, the way water goes around a rock.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -244,6 +246,70 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - The Current
+
+    /// The water is one body. A tide runs through it — slowly turning,
+    /// swelling and easing — and everything free in it moves with it:
+    /// the motes are carried, the light leans, the plumes of the
+    /// anchored creatures reach into it. Nothing in the water moves
+    /// alone.
+    private func tide(_ t: Double) -> (angle: Double, strength: Double) {
+        // the tide turns on a long breath, and swells and eases
+        let angle = 0.62 + 0.9 * sin(t * 2 * .pi / 420 + 1.3) + 0.45 * sin(t * 2 * .pi / 97 + 0.4)
+        let strength = 0.30 + 0.70 * (0.5 + 0.5 * sin(t * 2 * .pi / 260 + 2.2))
+        return (angle, strength)
+    }
+
+    /// The surface drift the tide makes, in points per second.
+    private func tideFlow(_ t: Double) -> (dx: Double, dy: Double) {
+        let tide = tide(t)
+        let speed = 2.0 + 5.0 * tide.strength
+        return (cos(tide.angle) * speed, sin(tide.angle) * speed)
+    }
+
+    /// The flow the water actually has at a point: the tide, bent
+    /// around the hand where it is — a soft body in a moving stream.
+    /// Far from the hand this is just the tide. At the hand's edge the
+    /// flow stalls; at its sides it doubles — the way water goes
+    /// around a rock.
+    private func localFlow(_ p: CGPoint, finger: CGPoint?, presence: Double, t: Double) -> (dx: Double, dy: Double) {
+        let flow = tideFlow(t)
+        guard let f = finger, presence > 0.001 else { return (flow.dx, flow.dy) }
+        let x = Double(p.x) - Double(f.x)
+        let y = Double(p.y) - Double(f.y)
+        let r2 = x * x + y * y
+        let a = 110.0 * (0.5 + 0.5 * presence)
+        let rs2 = max(r2, a * a * 0.25)
+        let rs4 = rs2 * rs2
+        let g = 1 - a * a * (x * x - y * y) / rs4
+        let c = 2 * a * a * x * y / rs4
+        let fx = Double(flow.dx), fy = Double(flow.dy)
+        return (fx * g - fy * c, fy * g - fx * c)
+    }
+
+    /// How far the water at a point has been carried out of the way of
+    /// the hand: the flow's deflection, carried along, plus a soft
+    /// outward parting that holds even in still water.
+    private func handParting(_ p: CGPoint, finger: CGPoint?, presence: Double, t: Double) -> (dx: Double, dy: Double) {
+        guard let f = finger, presence > 0.001 else { return (0, 0) }
+        let flow = tideFlow(t)
+        let u = localFlow(p, finger: f, presence: presence, t: t)
+        let x = Double(p.x) - Double(f.x)
+        let y = Double(p.y) - Double(f.y)
+        let r2 = x * x + y * y
+        let r = r2.squareRoot()
+        let part = 16.0 * presence * exp(-r2 / (2 * 120 * 120))
+        let px = r > 1 ? x / r * part : 0
+        let py = r > 1 ? y / r * part : 0
+        return ((u.dx - flow.dx) * 6.0 * presence + px, (u.dy - flow.dy) * 6.0 * presence + py)
+    }
+
+    @inline(__always)
+    private func blendAngle(_ a: Double, _ b: Double, _ w: Double) -> Double {
+        let d = atan2(sin(b - a), cos(b - a))
+        return a + d * w
+    }
+
     // MARK: - Drawing
 
     /// Deterministic unit random from (seed, channel): the fuzz behind
@@ -350,13 +416,15 @@ struct ContentView: View {
             )
         )
 
-        // two slow-drifting shafts of light
+        // two slow shafts of light, leaning with the tide
+        let tideNow = tide(t)
         for i in 0..<2 {
-            let drift = sin(t * 0.05 + Double(i) * 1.9) * 26
+            let drift = sin(t * 0.05 + Double(i) * 1.9) * 8
+                + cos(tideNow.angle) * (2.0 + 5.0 * tideNow.strength) * 6
             let x = size.width * (0.28 + 0.42 * Double(i)) + drift
             var shaft = context
             shaft.translateBy(x: x, y: -size.height * 0.15)
-            shaft.rotate(by: .degrees(16))
+            shaft.rotate(by: .degrees(16 + tideNow.angle * 12))
             let shaftRect = CGRect(x: -40, y: 0, width: 80, height: size.height * 1.5)
             shaft.fill(
                 Path(shaftRect),
@@ -368,7 +436,7 @@ struct ContentView: View {
             )
         }
 
-        // drifting motes, leaning a little into the hand's current
+        // drifting motes: carried by the tide, bent around the hand
         for i in 0..<16 {
             let x0 = fuzz(0x5EED, i) * size.width
             let speed = 5 + 9 * fuzz(0x5EED, 100 + i)
@@ -376,20 +444,27 @@ struct ContentView: View {
             let progress = (t * speed + Double(i) * 977.13).truncatingRemainder(dividingBy: cycle)
             var y = size.height + 20 - progress
             var x = x0 + sin(t * 0.3 + Double(i) * 0.9) * 14
+            // the tide carries: the longer a mote has been in the water,
+            // the farther the current has taken it
+            let upFor = progress / speed
+            let carry = tideFlow(t - upFor / 2)
+            let carryFactor = 0.8 + 0.4 * fuzz(0x5EED, 150 + i)
+            x += carry.dx * upFor * carryFactor
+            y += carry.dy * upFor * carryFactor * 0.35
+            let span = Double(size.width) + 40
+            var xx = x.truncatingRemainder(dividingBy: span)
+            if xx < 0 { xx += span }
+            if xx < 20 { xx -= span }
+            if let fp = fingerPoint, presence > 0.001 {
+                // the water parts around the hand
+                let parting = handParting(CGPoint(x: xx, y: y), finger: fp, presence: presence, t: t)
+                xx += parting.dx
+                y += parting.dy
+            }
             let radius = 0.7 + 1.5 * fuzz(0x5EED, 200 + i)
             let alpha = 0.04 + 0.18 * fuzz(0x5EED, 300 + i)
-            if let fp = fingerPoint, presence > 0.001 {
-                let dx = Double(fp.x) - x
-                let dy = Double(fp.y) - y
-                let d = hypot(dx, dy)
-                if d > 1 {
-                    let pull = presence * (1 - smoothstep(0, 170, d)) * 7
-                    x += dx / d * pull
-                    y += dy / d * pull
-                }
-            }
             context.fill(
-                Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+                Path(ellipseIn: CGRect(x: xx - radius, y: y - radius, width: radius * 2, height: radius * 2)),
                 with: .color(.white.opacity(alpha))
             )
         }
@@ -411,11 +486,14 @@ struct ContentView: View {
         // the tide, and turn to it only when it comes close
         let ageSettle = smoothstep(120, 1800, age)
 
-        // breathing and drifting
+        // breathing and drifting — the anchored body leans into the
+        // current, the way a holdfast leans into the sea
+        let tideNow = tide(t)
         let breathePhase = 2 * .pi * fuzz(seed, 50)
         let driftPhase = 2 * .pi * fuzz(seed, 51)
-        let swayX = sin(t * 0.35 + driftPhase) * 3
-        let swayY = cos(t * 0.27 + driftPhase * 1.31) * 3
+        let lean = 4.5 * tideNow.strength * (0.7 + 0.6 * fuzz(seed, 56))
+        let swayX = sin(t * 0.35 + driftPhase) * 3 + cos(tideNow.angle) * lean
+        let swayY = cos(t * 0.27 + driftPhase * 1.31) * 3 + sin(tideNow.angle) * lean
 
         // does the colony feel the current the hand has made? (0...1, eased by distance)
         var attention = 0.0
@@ -545,42 +623,49 @@ struct ContentView: View {
             )
         }
 
-        // cirri: the feathery feeding plumes, reaching into the current
-        // the hand has made — the barnacle tasting its visitor.
-        // The young taste everything; the old answer only a hand that
-        // comes close, and then reach shorter, and fainter.
+        // cirri: the feathery feeding plumes, always reaching into the
+        // current — the colony feeding on the open water — and turning
+        // toward a hand, which makes a richer local current. The young
+        // taste everything; the old reach shorter, and fainter.
         let cirriThreshold = 0.04 + 0.10 * ageSettle
+        let plumeBase = tideNow.angle + (fuzz(seed, 55) * 0.5 - 0.25)
+        var plumeReach = radius * (0.55 + 0.55 * tideNow.strength)
+            * (0.7 + 0.5 * fuzz(seed, 44)) * (1 - 0.35 * ageSettle)
+        var plumeAngle = plumeBase
+        var plumeVis = 0.14 + 0.10 * tideNow.strength
         if attention > cirriThreshold {
             let beyond = (attention - cirriThreshold) / max(0.25, 1 - cirriThreshold)
-            let cirriCount = 6
-            let reach = radius * (0.55 + 0.65 * beyond)
-            for i in 0..<cirriCount {
-                let spread = (Double(i) - Double(cirriCount - 1) / 2) * 0.55
-                let sway = 0.28 * sin(t * 1.1 + breathePhase + Double(i) * 1.31)
-                let a = angleToFinger + spread + sway
-                let start = CGPoint(
-                    x: center.x + cos(a) * radius * 0.12,
-                    y: center.y + sin(a) * radius * 0.12
-                )
-                let end = CGPoint(
-                    x: center.x + cos(a) * reach,
-                    y: center.y + sin(a) * reach
-                )
-                let midX = (start.x + end.x) / 2
-                let midY = (start.y + end.y) / 2
-                let ctrl = CGPoint(
-                    x: midX - sin(a) * radius * 0.18,
-                    y: midY + cos(a) * radius * 0.18
-                )
-                var filament = Path()
-                filament.move(to: start)
-                filament.addQuadCurve(to: end, control: ctrl)
-                context.stroke(
-                    filament,
-                    with: .color(Color(red: 0.85, green: 0.93, blue: 0.92).opacity(0.30 * beyond)),
-                    lineWidth: 1.2
-                )
-            }
+            plumeAngle = blendAngle(plumeBase, angleToFinger, min(1.0, 1.5 * attention))
+            plumeReach = max(plumeReach, radius * (0.55 + 0.65 * beyond))
+            plumeVis = max(plumeVis, 0.32 * beyond + 0.10)
+        }
+        let cirriCount = 6
+        for i in 0..<cirriCount {
+            let spread = (Double(i) - Double(cirriCount - 1) / 2) * 0.55
+            let sway = 0.28 * sin(t * 1.1 + breathePhase + Double(i) * 1.31)
+            let a = plumeAngle + spread + sway
+            let start = CGPoint(
+                x: center.x + cos(a) * radius * 0.12,
+                y: center.y + sin(a) * radius * 0.12
+            )
+            let end = CGPoint(
+                x: center.x + cos(a) * plumeReach,
+                y: center.y + sin(a) * plumeReach
+            )
+            let midX = (start.x + end.x) / 2
+            let midY = (start.y + end.y) / 2
+            let ctrl = CGPoint(
+                x: midX - sin(a) * radius * 0.18,
+                y: midY + cos(a) * radius * 0.18
+            )
+            var filament = Path()
+            filament.move(to: start)
+            filament.addQuadCurve(to: end, control: ctrl)
+            context.stroke(
+                filament,
+                with: .color(Color(red: 0.85, green: 0.93, blue: 0.92).opacity(plumeVis)),
+                lineWidth: 1.2
+            )
         }
 
         // a sliver of surface light on the upper-left

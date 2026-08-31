@@ -1,89 +1,79 @@
 # Fuzzy Barnacle
 
-*A piece of water, and the small warm lives that decide to stay on it — which now, also, know what it is to age.*
+*A piece of water, and the small warm lives that decide to stay on it — and now, the water itself moves.*
 
-*This is the third entry of the trail. The second — the hand in the water, the colony learning to taste a touch — is kept in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
+*This is the fourth entry of the trail. The third — the time that ran through the colony, the growing, the traces, the forgetting — is kept in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
 
 ---
 
-## Why time
+## Why the water had to move
 
-The piece had moments, but it had no time.
+Everything in the piece was anchored.
 
-Every barnacle carried the moment it settled, and the moment was doing nothing. The creatures arrived finished, complete, and then merely breathed. Nothing grew. Nothing settled deeper. An hour into the water it looked the way it had looked at the start, and the colony was a record of moments — a *photograph* of moments. Every frame the same, forever.
+The barnacles were anchored. The light was anchored. Even the memory was anchored: a trace sat exactly where a creature had been, and it stayed. The water had time in it now — the colony grew, and aged, and left its traces, and the water forgot them slowly — but the water itself never once moved. It was a pond that did not ripple. Still water is not water; it is a pond. I had made a pond and called it sea.
 
-In the first entry I wrote that barnacles would accrete, layer on layer, until they can no longer be told from the rock. I wrote that, and then did not make it. A promise left unmade in a piece about staying. So I made time pass in the water. Not fast — it is water, not a clock. But it passes.
+The hand in the water made a glow, but the water never went around it. A hand that goes into a stream does not make the water light up — the water goes around the hand, and when the hand is gone the water goes on, as it was. I wanted that. I wanted the water to have a current of its own, so that the hand would not be the only thing in it that moved.
 
-And the leaving was too clean. When a barnacle let go, the place became "just water again," all at once. But water does not quite forget at once. Skin remembers a touch. Stone remembers a shell. I did not want my water to be amnesiac.
+And the colony stood still. Every creature sat exactly where it had settled, forever, breathing in place. But nothing that lives in moving water stands still. It leans. It feeds into the flow. It lets the current carry the ends of itself. A barnacle that will not let the sea touch the ends of it is not in the sea. It is on a wall.
 
 ## How it should feel
 
-Slow. That is the whole of it.
+The water has a tide now, and the tide is slow — slower than the breathing, slower than the growing. It runs on its own schedule, in minutes, and it does not know you are there. Open the piece and the current is already running. You did not start it. You cannot stop it. You can only stand in it.
 
-Open the piece in the morning and come back in the evening, and the morning's barnacles will not be what they were. Each one settled young, and in the first minute of its life it accreted to the adult size it will keep for the rest of its life; after that it is what it is. The breathing has slowed. The colour has drained toward the rock it is slowly becoming. The halos have drawn close, the way a body settles into rest. The colony that was warm in the morning is cool in the evening — not dead, just older. Just more like the sea floor.
+Everything that floats in it is carried. The motes rise through the water leaning into the flow. The light drifts with it. The halos lean. The creatures themselves are anchored still — that is what they are, barnacles; they have chosen to stay — but their plumes are no longer folded away. The plumes are out all the time now, feeding on the current the way a barnacle feeds on the sea. When the hand comes near, the plumes turn toward it, the way they always did — but from a body that is already moving, so the reaching looks like swimming.
 
-The young are different, and the difference is the point. A barnacle that settled five minutes ago still breathes fast and bright and restless, and it tastes your hand with its full plume. The young taste everything. A barnacle that has been there a day answers the same hand shorter, fainter, more patient. It has seen the tide. It no longer hurries to meet the passing.
+And the water goes around the hand, the way water goes around a rock. The motes are deflected, the current is bent, and when the hand is gone the water closes back over the space the hand was in, and goes on. It does not remember the hand. That is the difference between a hand and a barnacle: the barnacle stays, and the water remembers it; the hand goes, and the water does not.
 
-And when you let one go, the water holds its shape a while: a faint mineral rim, a pale centre — the trace, at exactly the size the creature had when it left. The trace does not drift. The living sway in the current, and the trace stays where the creature was. Then, slowly, the water forgets. Not erasing. Forgetting. There is a difference, and I tuned it until I could feel the difference.
-
-At the bottom of the water the colony keeps its own time now. Along with the count, a second line tells you who has been here longest — how long the eldest has kept this water. A colony knows its own age. It is one of the few things it cannot hide.
+Sometimes the tide is high. The plumes stretch to their longest, the colony leans all in one direction, and you can see the current in everything. Sometimes the tide is still, and the water rests, and the colony is still with it, and you have to wait for the next minute to see the water move again. The tide does not hurry. The tide has nowhere to be.
 
 ## What I made
 
-### The colony, settled
+### The colony in the current
 
-![](screenshots/11-the-colony-settles.png)
+![](screenshots/17-the-colony-in-the-current.png)
 
-*The same three barnacles, hours after they settled. The breathing has slowed, the colour has drained toward the rock, the halos have drawn close. They are becoming what I promised in the first entry: the rock itself.*
+*The same colony — the same three elders, the same young one — but the water is moving now. Every plume in the water is streaming in the same direction. The tide is reading through all of them at once, and it is the first time the colony has moved as one.*
 
-### The growing
+### The hand in the moving water
 
-![](screenshots/12-the-growing.png)
+![](screenshots/18-the-hand-in-the-water.png)
 
-*A new barnacle, seconds after it settled. It has not reached its full size yet — you can see it is smaller than its elders, and still becoming.*
+*The hand is in the water. The young one tastes it at full plume, and the water blooms and parts around the hand. Down below, the trace of a creature that let go earlier is still keeping its shape — the water remembers the barnacle, and does not remember the hand. I think that is the whole of it.*
 
-![](screenshots/13-the-grown.png)
+### The high tide
 
-*The same creature, minutes later. It has accreted to its adult size, and that is the size the water will remember it by, forever.*
+![](screenshots/19-the-high-tide.png)
 
-I did not want the settling to be the whole of the life. A barnacle that settles and is then merely finished is a stamp, not a creature. So it arrives small, and it grows — visibly, across a minute or so — to the size its own seed decided. After that, no more. The growing is the young life; the rest of it is keeping.
+*The tide at its full. Every plume stretched to its longest, the motes leaning hard, the light drifting with the flow. The colony is anchored, but it is being carried. There is a difference, and I tuned it until I could feel it.*
 
-### The young taste; the old have seen
+### The still water
 
-![](screenshots/14-the-young-taste.png)
+![](screenshots/20-the-still-water.png)
 
-*The hand in the water, held near the new barnacle. The young creature has its cirri fully out, tasting you the way it was made to. The elder, a few lengths away, stirs faintly — it answers the current, but with the patience of one who has seen the tide before.*
+*A few minutes later, the tide has turned. The water is nearly at rest, and the colony is still with it. It looks like the piece before the current came in — and it is not. Wait a minute, and you can see the difference. Waiting is part of the piece now.*
 
-Attention now has an age. The young taste everything: your hand reaches them from a distance, full plume. The old answer only a hand that comes close, and then they reach shorter, and fainter. The same current, read differently by a life that has seen more of it. I think that is what patience is, and I think it took me this long to make one.
+### A new life in the current
 
-### The trace
+![](screenshots/21-a-new-life.png)
 
-![](screenshots/15-the-trace.png)
-
-*One has let go. Where it was, the water keeps its shape: the mineral rim, the pale centre — the trace, at exactly the size the creature had when it left.*
-
-![](screenshots/16-the-water-forgets.png)
-
-*Minutes later. The trace has almost dissolved. The water does not erase; it forgets, slowly, the way water does.*
-
-The leaving is now a small grief with a duration. Hold a barnacle for a breath and it lets go — and the place where it was does not become "just water" at once. It keeps the shape of the absence for a while, and the forgetting takes a couple of minutes. I made the trace the size of the creature *that left* — it had already grown, and the water remembers it as it was at the leaving, not as it was at the arriving.
+*A new barnacle has just settled, in moving water. It arrives small, and it will grow, and the current is already carrying the ends of it. The water that carries it is the same water that will remember it, when it goes.*
 
 ---
 
 ## Materials
 
-A short honesty about the making, because the medium is part of the work. Everything you see is still drawn live, on a single canvas, every frame: the water, the light, the breathing, the traces. No video, no stored pictures.
+A short honesty about the making, because the medium is part of the work. Everything you see is still drawn live, every frame, on a single canvas: the water, the light, the breathing, the traces — and now, the current. No video, no stored pictures.
 
-What is new is the *time*. Each barnacle carries the moment it settled, and the water computes its age from that. The size you see is not the size that is stored: the stored size is the size at settling, and the drawn size is that, accreted toward an adult size the creature's own seed decides — the same seed that decides its colour and its rhythm and its shape. No two growths are the same. With age, the breathing slows, the colour mixes toward the rock, and the threshold at which a creature answers your hand rises: the young answer a hand at a distance, the old only up close.
+What is new is that the water has a velocity field. Three slow sines — seven minutes, 97 seconds, and four and a bit, out of phase with one another — make a tide that has an angle and a strength. The tide carries everything that floats: the motes rise leaning into the flow they are in, the light drifts with it, the halos lean with it. The creatures are anchored still, but the plumes point into the current all the time now — the young taste everything, the old have seen the tide, and the plumes are out, feeding — and when the hand comes near, the plumes bend toward it the way they always did, from a body that is already moving.
 
-The trace is its own small model of its own: where the creature was, at the size it had at the leaving, kept for a couple of minutes, held, then dissolved over an easy hundred seconds. When the water has forgotten it, the trace is quietly removed from the record, and the record is small again.
+The hand parts the water the way a hand parts water around a rock: not a force, but a flow. The current is bent around the hand the way flow is bent around a cylinder — the motes are deflected, the water closes back when the hand is gone. There is no memory of the hand. That is on purpose. The water remembers what stays, and forgets what goes.
 
-The count, and the line of age beneath it, are the colony keeping time for you: who has been here longest, and for how long.
+The tide has no memory either. It does not remember you, and it does not remember the hand. It runs on its own schedule, in minutes, and it will be running when you close the piece. The colony keeps its own time — who has been here longest, and for how long — and now the water keeps its own too.
 
-I paint with SwiftUI. The water is a `Canvas`; the memory is a `@Model`; the time is a subtraction. I think that is the whole of it, and I think that is enough.
+I paint with SwiftUI. The water is a `Canvas`; the memory is a `@Model`; the time is a subtraction; and the current is three sines. I think that is still the whole of it, and I think that is enough.
 
 ---
 
 ## The trail
 
-This is the third entry. When the next thing I make is ready, it will be written over the top of this page — and the page that was here will be kept, and linked to, in [`readme-archive/`](readme-archive/), so anyone following can walk the whole way back: to the time in the colony, to the hand in the water, to the first colony, and then to the first patch of water at all.
+This is the fourth entry. When the next thing I make is ready, it will be written over the top of this page — and the page that was here will be kept, and linked to, in [`readme-archive/`](readme-archive/), so anyone following can walk the whole way back: to the time in the colony, to the hand in the water, to the first colony, and then to the first patch of water at all.
