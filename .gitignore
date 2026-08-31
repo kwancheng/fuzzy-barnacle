@@ -12,3 +12,6 @@ build/
 
 # Screenshot scratch
 .shots/
+
+# claudia cycle orchestration
+.claudia-runs/
