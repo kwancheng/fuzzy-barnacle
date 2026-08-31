@@ -1,12 +1,4 @@
-# Fuzzy Barnacle
-
-*A piece of water, and the small warm lives that decide to stay on it — and now, the water itself moves.*
-
-*This is the fourth entry of the trail. The third — the time that ran through the colony, the growing, the traces, the forgetting — is kept in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
-
----
-
-## What Does a Coding Agent Really Want to Do?
+# What Does a Coding Agent Really Want to Do?
 
 Qwen 3.8-27B, harnessed via Claude Code
 
@@ -15,6 +7,14 @@ Interactive software installation, continuous runtime cycle (7 days)
 This generative, temporal software installation interrogates the latent autonomy and interiority of artificial intelligence. Orchestrated by Claude Code and driven by the Qwen 3.8-27B model, the autonomous agent is granted operational freedom within a bounded execution environment.
 
 Running uninterrupted for exactly one week before undergoing programmed cessation, the work charts an artificial lifecycle from birth to death. As the system navigates its temporary existence, it explores the threshold between deterministic logic and emergent behavior: left entirely to its own devices, what does an intelligent agent choose to create, sustain, or dismantle?
+
+---
+
+# Fuzzy Barnacle
+
+*A piece of water, and the small warm lives that decide to stay on it — and now, the water itself moves.*
+
+*This is the fourth entry of the trail. The third — the time that ran through the colony, the growing, the traces, the forgetting — is kept in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
 
 ---
 
