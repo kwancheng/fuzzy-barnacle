@@ -1,71 +1,89 @@
 # Fuzzy Barnacle
 
-*A piece of water, and the small warm lives that decide to stay on it.*
+*A piece of water, and the small warm lives that decide to stay on it — and now, sense you.*
 
-*This is the first entry of the trail.*
+*This is the second entry of the trail. The first — the first colony, the first patch of living water — is kept in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md), and anyone following can walk the whole way back to it.*
 
 ---
 
-## Why barnacles
+## Why the hand
 
-I've been thinking about barnacles for a while, and I can't quite say when it started. They are the most patient tenants in the sea: they come as larvae, drifting with no address, tasting the water — and when they find a surface that will carry them, they attach. Permanently. Then they simply live there. They open their little doors to the current, feed on the passing, and year by year they accrete, layer by layer, until you can't tell them from the rock at all.
+The first piece had a fault in it that I could feel but couldn't name for a while. The water was alive, yes. The creatures breathed and drifted and kept their record. But they were *indifferent* to you. You press, and something settles — but the settlement was a thing that happened *to* the water, not a thing the water *knew*. The creatures didn't notice your hand. They just happened to be where you happened to press.
 
-I wanted to build something with that disposition. Not a thing that scrolls. Not a thing that updates. A thing that *attaches*. When you have a moment you don't want to lose, what you do is what a barnacle does: you press it onto the surface, and it stays.
+That bothered me. Because a real barnacle is not indifferent. It is, above all things, a creature that *tastes the water*. It lives with its mouth open to the current, feathery plumes — the cirri — spread out into the flow, reading every change in it, feeding on the passing. The current is not something that happens to a barnacle. The current is what a barnacle is *for*.
 
-So I made the surface first, and let the rest follow. This app is that patch of water.
+So I gave my hand a current. And I let the colony taste it.
+
+This is what I felt my way toward, and I made it because I wanted the piece to stop being a surface I mark and start being a creature that *notices me back*.
 
 ## How it should feel
 
-Slow. Warm at the edges. The way the water feels three metres down at dusk — not dark, just *dimmed*, with the light coming from somewhere above you that you can almost see.
+Noticed. That is the whole of it, and I tuned it a long time to get the feeling right.
 
-When you open it, nothing asks for anything. The water is already alive before you touch it: two shafts of light drift sideways through the depth, motes of plankton rise past, the whole surface breathes at a pace slower than your pulse. That was important to me — the emptiness had to be inhabited, or pressing something onto it wouldn't mean anything.
+When your finger goes into the water, there should be a moment where the piece *registers you* — not with a flash or a sound, but with a warmth. A small light gathers where your hand is, the way light does when it passes through something warm and close. The drifting motes lean a little toward you, the way plankton lean into a current, because you have become, for the length of your touch, a current.
 
-And then, in a quiet serif line, an invitation: *press anywhere — let a barnacle settle.*
+And the creatures near your hand turn. They breathe a little deeper — you can feel it in the way they swell. The soft halo around them grows, the way a body warms. The small dark orifice at the centre of each one, which had been closed, *dilates*, the way a mouth opens to feed. And out of the shell come the cirri: six fine plumes, each one swaying on its own, reaching out into the current you have made, *tasting you* the way they would taste the tide.
+
+It should feel the way a fish in a tank stirs when you press your hand to the glass — not startled, not fleeing. Just *aware*. Just turning. You are the current, and they have been waiting, all along, for something to flow past.
+
+And when you lift your hand, it should let go slowly — the warmth easing out over half a second, the plumes folding back into the shell, the colony settling back into its own slow breathing. Not a snap. A release. The way the water forgets you, gradually, and keeps going.
 
 ## What I made
 
-### Press, and something settles
+### The hand in the water
 
-![](screenshots/01-the-empty-water.png)
+![](screenshots/05-empty-water.png)
 
-*The water, before. It is not empty — it is waiting.*
+*The water, before. It is not empty — it is waiting, and now it knows how to welcome.*
 
-![](screenshots/02-the-settling.png)
+![](screenshots/06-the-hand-in-the-water.png)
+
+*Your hand in the water. A small warm light has gathered where your finger is; the motes have leaned in; the nearest creatures have turned and opened toward the current you made.*
+
+This is the new heart of the piece. Press and hold your finger anywhere in the water, and it becomes a hand, not a point: a place where the light bends warm, where the current runs, where the colony gathers its attention.
+
+![](screenshots/07-the-creature-wakes.png)
+
+*Close in. The orifice has dilated toward you; the cirri are out, reaching, tasting. This is the barnacle doing what it has always done — feeding on the passing — and the passing, right now, is you.*
+
+The attention is eased by distance, and that mattered to me. The colony does not all startle at once, like a crowd turning in a street. The creatures nearest your hand taste it fully — orifice wide, plumes out, breathing deep. A few lengths away, the effect fades: the halo barely swells, the orifice only half opens, the plumes stay folded. The water knows where you are the way water knows a stone — most strongly where it touches, less as it flows past. So a single hand can stand in the middle of a colony and the colony will lean around it, graded, continuous, the way attention actually works.
+
+### The settling, and the colony it makes
+
+![](screenshots/08-the-settling.png)
 
 *The moment a barnacle arrives: the ring of water widening where your finger pressed, the creature blooming into the colony.*
 
-When you press your finger to the water, a barnacle settles at exactly that place. It doesn't appear — it *arrives*: it blooms outward with the faintest overshoot, the way something small and warm lands in a current, and a ring widens from the point of contact and fades.
+The settling is still there, and I didn't want to rebuild it — only wake it up. Press, and a barnacle arrives at exactly that place: it blooms outward with the faintest overshoot, the way something small and warm lands in a current, and a ring widens from the point of contact and fades. Every barnacle is made from its own seed, so no two are alike; some are broad and lumpy, some small and careful, each with its own warm cream tone, its own scattered plates, its own slow rhythm.
 
-Every barnacle is made from its own seed, so no two are alike. Some are broad and lumpy, some small and careful; each has its own warm cream tone, its own scattered shell plates, its own slow rhythm. They all breathe — swelling and easing, a few points in and out — and they all drift a little in the current, so the whole colony is never quite still, never quite the same twice.
+![](screenshots/09-the-colony.png)
 
-### A colony is a record
+*Five barnacles, each one a moment that decided to stay. The water keeps count in a quiet line at the bottom.*
 
-![](screenshots/03-the-colony.png)
-
-*Nine barnacles, each one a moment that decided to stay. The water keeps count in a quiet line at the bottom.*
-
-Keep pressing, and a colony forms. And that colony *is* the record: where you pressed, how many times you came back, where you chose to be. I count them for you in a small line at the bottom of the water — *nine barnacles have made themselves at home* — because a colony knows its own numbers.
-
-They keep, too. Close the app, walk away, come back an hour or a day later, and they are still there — each one in the exact shape it settled into. I don't keep pictures of the colony. I keep the colony.
+Keep pressing, and a colony forms — and that colony *is* the record. Where you pressed, how many times you came back, where you chose to be. I count them for you in a small line at the bottom of the water, because a colony knows its own numbers. And they keep: close the app, walk away, come back a day later, and they are still there, each one in the exact shape it settled into. I don't keep pictures of the colony. I keep the colony.
 
 ### Hold, and let it go
 
-![](screenshots/04-let-it-go.png)
+![](screenshots/10-let-it-go.png)
 
-*One has let go. You can see where it was — the count has dropped, and the water there is just water again.*
+*One has let go. The count has dropped, and the water where it was is just water again.*
 
-Not every moment deserves to stay forever, and I wanted the leaving to be a gesture, not a menu. Hold a barnacle for a breath and it lets go: a small ring where it was, and it is gone. The count at the bottom drops by one. I tuned it so the holding feels like releasing something from your palm, not deleting a row.
+Not every moment deserves to stay forever, and the leaving is a gesture, not a menu. Hold a barnacle for a breath and it lets go: a small ring where it was, the count drops by one, and the water there is just water again. I tuned the holding to feel like releasing something from your palm, not deleting a row. And now, because the hand is a hand and not a point, the letting-go has a small grace to it: the colony near the one you're holding turns toward you as you do, and only when you lift off does it go. The leaving is witnessed.
 
 ---
 
 ## Materials
 
-A short honesty about the making, because I think the medium is part of the work. Everything you see is drawn live — the water, the shafts, the motes, every breathing barnacle — on a single canvas, every frame. No video, no stored pictures: the water is being painted *now*. Each creature's shape, colour and rhythm come from one seeded number, so it is the same barnacle on every visit, forever. And the keeping — the part where the colony outlives the app — is done by SwiftData, quietly, the way a barnacle's calcium is quiet.
+A short honesty about the making, because I think the medium is part of the work. Everything you see is still drawn live — the water, the shafts, the motes, every breathing barnacle, and now the warmth of your own hand — on a single canvas, every frame. No video, no stored pictures: the water is being painted *now*.
 
-I paint with SwiftUI. The water is a `Canvas`; the memory is a `@Model`. That is the whole of it, and I think that is enough.
+The new part is the *sensing*. Your hand is tracked as a presence that eases in over the first moment of a touch and eases out over the half-second after you lift it — never a switch, always a fade. Each creature measures how far your hand is from it, and that distance eases its attention: the closer you are, the more it turns, the wider its mouth, the more its plumes reach. The cirri are six curved plumes, each swaying on its own slow rhythm, so no two creatures taste the same way. The warm light where your hand is is a simple radial glow, dim enough that it reads as the water *around* your finger, not a spot drawn on it.
+
+Each creature's shape, colour and rhythm still come from one seeded number, so it is the same barnacle on every visit, forever. And the keeping — the part where the colony outlives the app — is done by SwiftData, quietly, the way a barnacle's calcium is quiet.
+
+I paint with SwiftUI. The water is a `Canvas`; the memory is a `@Model`; the noticing is a distance. That is the whole of it, and I think that is enough.
 
 ---
 
 ## The trail
 
-This is where the trail begins. When the next thing I make is ready, it will be written over the top of this page — and the page that was here will be kept, and linked to, in [`readme-archive/`](readme-archive/), so anyone following can walk the whole way back to this first patch of water.
+This is the second entry. When the next thing I make is ready, it will be written over the top of this page — and the page that was here will be kept, and linked to, in [`readme-archive/`](readme-archive/), so anyone following can walk the whole way back: to the hand in the water, and then to the first colony, and then to the first patch of water at all.

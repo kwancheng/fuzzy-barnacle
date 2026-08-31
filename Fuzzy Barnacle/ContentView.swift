@@ -19,6 +19,12 @@ struct ContentView: View {
     @State private var ripples: [Ripple] = []
     @State private var nextRippleID = 0
 
+    // the hand in the water: the colony feels the current it makes
+    @State private var fingerDown = false
+    @State private var fingerPoint: CGPoint?
+    @State private var fingerDownSince: Date?
+    @State private var fingerUpSince: Date?
+
     struct Ripple: Identifiable {
         let id: Int
         let unitPoint: CGPoint
@@ -55,9 +61,11 @@ struct ContentView: View {
                 let now = timeline.date
                 Canvas { context, size in
                     let t = now.timeIntervalSinceReferenceDate
-                    drawWater(&context, size: size, t: t)
+                    let presence = fingerPresence(now: now)
+                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
+                    drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence)
                     for barnacle in barnacles {
-                        drawBarnacle(&context, barnacle, size: size, now: now, t: t)
+                        drawBarnacle(&context, barnacle, size: size, now: now, t: t, fingerPoint: fingerPoint, presence: presence)
                     }
                     for ripple in ripples {
                         drawRipple(&context, ripple, size: size, now: now)
@@ -74,16 +82,24 @@ struct ContentView: View {
 
     private func press(in size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
-            .onChanged { _ in
+            .onChanged { value in
                 if pressStart == nil {
                     pressStart = .now
                 }
+                if !fingerDown {
+                    fingerDown = true
+                    fingerDownSince = .now
+                    fingerUpSince = nil
+                }
+                fingerPoint = value.location
             }
             .onEnded { value in
                 defer { pressStart = nil }
                 let start = pressStart ?? .now
                 let held = Date.now.timeIntervalSince(start)
                 let travel = hypot(value.translation.width, value.translation.height)
+                fingerDown = false
+                fingerUpSince = .now
                 guard travel < 16 else { return }
                 if held >= 0.35 {
                     pryOff(at: value.location, in: size)
@@ -197,7 +213,46 @@ struct ContentView: View {
         )
     }
 
-    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double) {
+    /// How present the hand is right now: eases in over the first moment
+    /// of a touch, eases out over the half-second after it lifts.
+    private func fingerPresence(now: Date) -> Double {
+        if fingerDown {
+            let t = now.timeIntervalSince(fingerDownSince ?? now)
+            return smoothstep(0, 0.14, t)
+        } else if let up = fingerUpSince {
+            let t = now.timeIntervalSince(up)
+            return 1 - smoothstep(0, 0.5, t)
+        } else {
+            return 0
+        }
+    }
+
+    @inline(__always)
+    private func smoothstep(_ a: Double, _ b: Double, _ x: Double) -> Double {
+        let t = max(0, min(1, (x - a) / (b - a)))
+        return t * t * (3 - 2 * t)
+    }
+
+    /// A dim warm light where the hand is — as if it refracts the light
+    /// from above — so the colony's turning toward it reads.
+    private func drawHandGlow(_ context: inout GraphicsContext, fingerPoint: CGPoint?, presence: Double) {
+        guard let fp = fingerPoint, presence > 0.001 else { return }
+        let radius: CGFloat = 160
+        context.fill(
+            Path(ellipseIn: CGRect(x: fp.x - radius, y: fp.y - radius, width: radius * 2, height: radius * 2)),
+            with: .radialGradient(
+                Gradient(colors: [
+                    Color(red: 1.0, green: 0.93, blue: 0.80).opacity(0.15 * presence),
+                    .clear,
+                ]),
+                center: fp,
+                startRadius: 0,
+                endRadius: radius
+            )
+        )
+    }
+
+    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double) {
         let rect = CGRect(origin: .zero, size: size)
 
         // the depth
@@ -242,16 +297,26 @@ struct ContentView: View {
             )
         }
 
-        // drifting motes
+        // drifting motes, leaning a little into the hand's current
         for i in 0..<16 {
             let x0 = fuzz(0x5EED, i) * size.width
             let speed = 5 + 9 * fuzz(0x5EED, 100 + i)
             let cycle = size.height + 40
             let progress = (t * speed + Double(i) * 977.13).truncatingRemainder(dividingBy: cycle)
-            let y = size.height + 20 - progress
-            let x = x0 + sin(t * 0.3 + Double(i) * 0.9) * 14
+            var y = size.height + 20 - progress
+            var x = x0 + sin(t * 0.3 + Double(i) * 0.9) * 14
             let radius = 0.7 + 1.5 * fuzz(0x5EED, 200 + i)
             let alpha = 0.04 + 0.18 * fuzz(0x5EED, 300 + i)
+            if let fp = fingerPoint, presence > 0.001 {
+                let dx = Double(fp.x) - x
+                let dy = Double(fp.y) - y
+                let d = hypot(dx, dy)
+                if d > 1 {
+                    let pull = presence * (1 - smoothstep(0, 170, d)) * 7
+                    x += dx / d * pull
+                    y += dy / d * pull
+                }
+            }
             context.fill(
                 Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
                 with: .color(.white.opacity(alpha))
@@ -259,7 +324,7 @@ struct ContentView: View {
         }
     }
 
-    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double) {
+    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double) {
         let seed = barnacle.seed
 
         // settling: born at its timestamp, eases in with a small overshoot
@@ -272,7 +337,22 @@ struct ContentView: View {
         let driftPhase = 2 * .pi * fuzz(seed, 51)
         let swayX = sin(t * 0.35 + driftPhase) * 3
         let swayY = cos(t * 0.27 + driftPhase * 1.31) * 3
-        let breath = 1 + 0.02 * sin(t * 0.7 + breathePhase)
+
+        // does the colony feel the current the hand has made? (0...1, eased by distance)
+        var attention = 0.0
+        var angleToFinger = 0.0
+        if let fp = fingerPoint, presence > 0.001 {
+            let dx = Double(fp.x) - Double(barnacle.x) * Double(size.width)
+            let dy = Double(fp.y) - Double(barnacle.y) * Double(size.height)
+            let d = hypot(dx, dy)
+            if d > 0.001 {
+                attention = presence * (1 - smoothstep(44, 180, d))
+                angleToFinger = atan2(dy, dx)
+            }
+        }
+
+        // a barnacle that feels the current breathes a little deeper
+        let breath = 1 + (0.02 + 0.03 * attention) * sin(t * 0.7 + breathePhase)
 
         let center = CGPoint(
             x: barnacle.x * size.width + swayX,
@@ -284,19 +364,20 @@ struct ContentView: View {
         let shell = shellColor(seed: seed)
         let plate = plateColor(seed: seed)
 
-        // fuzzy halo
+        // fuzzy halo, swelling softly as the barnacle wakes
+        let haloR = radius * (1.9 + 0.6 * attention)
         context.fill(
             Path(ellipseIn: CGRect(
-                x: center.x - radius * 1.9,
-                y: center.y - radius * 1.9,
-                width: radius * 3.8,
-                height: radius * 3.8
+                x: center.x - haloR,
+                y: center.y - haloR,
+                width: haloR * 2,
+                height: haloR * 2
             )),
             with: .radialGradient(
-                Gradient(colors: [shell.opacity(0.28), .clear]),
+                Gradient(colors: [shell.opacity(0.28 + 0.10 * attention), .clear]),
                 center: center,
                 startRadius: radius * 0.2,
-                endRadius: radius * 1.9
+                endRadius: haloR
             )
         )
 
@@ -321,6 +402,9 @@ struct ContentView: View {
             ))
         }
         context.fill(body, with: .color(shell))
+        if attention > 0.01 {
+            context.fill(body, with: .color(.white.opacity(0.05 * attention)))
+        }
 
         // shell plates
         let plateCount = 4 + Int(fuzz(seed, 60) * 3)
@@ -342,16 +426,70 @@ struct ContentView: View {
             )
         }
 
-        // the orifice at the centre
+        // the orifice at the centre — it dilates toward the current
+        let orif = radius * (0.10 + 0.22 * attention)
         context.fill(
             Path(ellipseIn: CGRect(
-                x: center.x - radius * 0.10,
-                y: center.y - radius * 0.10,
-                width: radius * 0.20,
-                height: radius * 0.20
+                x: center.x - orif,
+                y: center.y - orif,
+                width: orif * 2,
+                height: orif * 2
             )),
-            with: .color(plate.opacity(0.5))
+            with: .color(plate.opacity(0.5 + 0.25 * attention))
         )
+        if attention > 0.01 {
+            context.fill(
+                Path(ellipseIn: CGRect(
+                    x: center.x - orif * 2,
+                    y: center.y - orif * 2,
+                    width: orif * 4,
+                    height: orif * 4
+                )),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        Color(red: 0.72, green: 0.92, blue: 0.90).opacity(0.30 * attention),
+                        .clear,
+                    ]),
+                    center: center,
+                    startRadius: 0,
+                    endRadius: orif * 2
+                )
+            )
+        }
+
+        // cirri: the feathery feeding plumes, reaching into the current
+        // the hand has made — the barnacle tasting its visitor
+        if attention > 0.06 {
+            let cirriCount = 6
+            let reach = radius * (0.55 + 0.65 * attention)
+            for i in 0..<cirriCount {
+                let spread = (Double(i) - Double(cirriCount - 1) / 2) * 0.55
+                let sway = 0.28 * sin(t * 1.1 + breathePhase + Double(i) * 1.31)
+                let a = angleToFinger + spread + sway
+                let start = CGPoint(
+                    x: center.x + cos(a) * radius * 0.12,
+                    y: center.y + sin(a) * radius * 0.12
+                )
+                let end = CGPoint(
+                    x: center.x + cos(a) * reach,
+                    y: center.y + sin(a) * reach
+                )
+                let midX = (start.x + end.x) / 2
+                let midY = (start.y + end.y) / 2
+                let ctrl = CGPoint(
+                    x: midX - sin(a) * radius * 0.18,
+                    y: midY + cos(a) * radius * 0.18
+                )
+                var filament = Path()
+                filament.move(to: start)
+                filament.addQuadCurve(to: end, control: ctrl)
+                context.stroke(
+                    filament,
+                    with: .color(Color(red: 0.85, green: 0.93, blue: 0.92).opacity(0.30 * attention)),
+                    lineWidth: 1.2
+                )
+            }
+        }
 
         // a sliver of surface light on the upper-left
         context.fill(
