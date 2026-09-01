@@ -26,7 +26,12 @@ import SwiftData
 /// speaks: the same tide that carries the motes is what murmurs,
 /// the same storm is what falls as rain, and a moving hand is what
 /// swishes, the way the sea swishes where a wave breaks — and the
-/// slack water is quiet, and the water says so.
+/// slack water is quiet, and the water says so. And the colony
+/// speaks when it tucks in: when the storm comes and the colony
+/// closes its shells, there is a granular voice, made of the
+/// colony itself — sparse and far at the storm's stirring, a bed
+/// of closings at its full — and where there is no storm the
+/// colony is quiet, the way the slack water is quiet.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -118,21 +123,25 @@ struct ContentView: View {
 
     /// One telling of the voice: how fast the current is turning
     /// (the murmur), how much storm is over the water (the rain),
-    /// the swish where the hand has been, and how low the voice
-    /// sits, which is lower in the water's night. The swish runs on
-    /// the world's time, the way the hand's other answers do — it
-    /// is the hand the water knows, not the clock the water keeps.
+    /// the closing of the colony's shells where the storm tucks the
+    /// colony in (the tuck), the swish where the hand has been, and
+    /// how low the voice sits, which is lower in the water's night.
+    /// The swish runs on the world's time, the way the hand's other
+    /// answers do — it is the hand the water knows, not the clock
+    /// the water keeps.
     private func speak() {
         let now = Date.now
         let vnow = now.addingTimeInterval(Self.timeOffset)
         let t = vnow.timeIntervalSinceReferenceDate
         let light = Self.drawnLight(t)
+        let stormNow = Self.storm(t)
         voice.update(
             murmur: Self.murmurGain(
                 strengthNow: Self.tide(t).strength,
                 strengthThen: Self.tide(t - 2).strength
             ),
-            rain: Self.rainGain(storm: Self.storm(t), light: light),
+            rain: Self.rainGain(storm: stormNow, light: light),
+            tuck: Self.tuckGain(storm: stormNow),
             swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
             cutoff: 240 + 660 * (0.3 + 0.7 * light)
         )
@@ -789,7 +798,14 @@ struct ContentView: View {
     /// falls as rain. And a moving hand is what swishes, the way
     /// the sea swishes where a wave breaks: the same hand that makes
     /// the wake makes the swish, and a still hand makes neither,
-    /// the way a still hand is only a lamp.
+    /// the way a still hand is only a lamp. And the colony, when
+    /// the storm comes and it tucks in, closes its shells, and the
+    /// closing is a granular voice, made of the colony itself:
+    /// sparse and far at the storm's stirring, a bed of closings at
+    /// the storm's full — and where there is no storm the colony is
+    /// quiet, the way the slack water is quiet. The colony's voice
+    /// is the storm's, not the colony's: the colony speaks only
+    /// when the water is angry.
 
     /// How much of the water's low voice is up at a moment: the
     /// voice is the *turning* of the current — the change of the
@@ -821,6 +837,18 @@ struct ContentView: View {
     static func handSwish(speed: Double, age: Double) -> Double {
         let stirred = min(1, speed / 450)
         return 0.22 * stirred * exp(-max(0, age) * 0.9)
+    }
+
+    /// The colony's closing, as a voice: when the storm comes the
+    /// colony tucks in, and the closing of its shells is what the
+    /// colony says — a granular voice, made of the colony itself.
+    /// It is the storm's voice, not the colony's: the closing comes
+    /// and thickens with the storm, and where there is no storm the
+    /// colony is quiet, the way the slack water is quiet. When the
+    /// storm passes, the closing is gone the way the storm is gone,
+    /// and the water does not remember it.
+    static func tuckGain(storm: Double) -> Double {
+        return 0.06 * storm
     }
 
     // MARK: - Virtual Time

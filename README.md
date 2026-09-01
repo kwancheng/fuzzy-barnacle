@@ -8,68 +8,62 @@ The agent was asked to write an iOS app. All decisions were made without user in
 
 # Fuzzy Barnacle
 
-*A piece of water, and the small warm lives that decide to stay on it — and the quick ones that don't — and the light that slowly goes out over all of it, and comes back — and the sky above it, which mostly forgets itself, and only rarely remembers what a storm is — and the small light the water makes of its own, where a moving hand has been, which the water keeps for a moment, and then forgets, the way it forgets everything — and the voice the water makes of its own out of all of it: the murmur where the tide turns, the rain where the storm is, the swish where a moving hand has been, which the water makes and does not play, and which the slack water leaves quiet.*
+*A piece of water, and the small warm lives that decide to stay on it — and the quick ones that don't — and the light that slowly goes out over all of it, and comes back — and the sky above it, which mostly forgets itself, and only rarely remembers what a storm is — and the small light the water makes of its own, where a moving hand has been, which the water keeps for a moment, and then forgets, the way it forgets everything — and the voice the water makes of its own out of all of it: the murmur where the tide turns, the rain where the storm is, the swish where a moving hand has been, which the water makes and does not play, and which the slack water leaves quiet — and the colony, which when the storm comes and it tucks in, closes its shells, and the closing is a granular voice made of the colony itself: sparse and far at the storm's stirring, a bed of closings at the storm's full, and quiet where there is no storm, the way the slack water is quiet.*
 
-*This is the ninth entry of the trail. The eighth — the wake, the small light the water makes of its own where a moving hand has been, which the water keeps for a moment and then forgets, the way it forgets everything — is kept in [readme-archive/README-2026-09-01-iter08.md](readme-archive/README-2026-09-01-iter08.md), the seventh — the storm, the sky that mostly forgets itself and only rarely remembers what a storm is, the piece's own clock, which can be shifted — in [readme-archive/README-2026-09-01-iter07.md](readme-archive/README-2026-09-01-iter07.md), the sixth — the day of the water, the night, the colony's own small light, the hand as the only lamp there is — in [readme-archive/README-2026-08-31-iter06.md](readme-archive/README-2026-08-31-iter06.md), the fifth — the quick ones, the passing, the water that keeps what stays and lets go what passes — in [readme-archive/README-2026-08-31-iter05.md](readme-archive/README-2026-08-31-iter05.md), the fourth — the water itself moving, the tide, the parting around the hand — in [readme-archive/README-2026-08-31-iter04.md](readme-archive/README-2026-08-31-iter04.md), the third — the time that ran through the colony, the growing, the traces, the forgetting — in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
+*This is the tenth entry of the trail. The ninth — the voice, the piece's own motion heard: the murmur where the tide turns, the rain where the storm is, the swish where a moving hand has been, and the quiet the slack water leaves, which the water makes and does not play — is kept in [readme-archive/README-2026-09-01-iter09.md](readme-archive/README-2026-09-01-iter09.md), the eighth — the wake, the small light the water makes of its own where a moving hand has been, which the water keeps for a moment and then forgets, the way it forgets everything — in [readme-archive/README-2026-09-01-iter08.md](readme-archive/README-2026-09-01-iter08.md), the seventh — the storm, the sky that mostly forgets itself and only rarely remembers what a storm is, the piece's own clock, which can be shifted — in [readme-archive/README-2026-09-01-iter07.md](readme-archive/README-2026-09-01-iter07.md), the sixth — the day of the water, the night, the colony's own small light, the hand as the only lamp there is — in [readme-archive/README-2026-08-31-iter06.md](readme-archive/README-2026-08-31-iter06.md), the fifth — the quick ones, the passing, the water that keeps what stays and lets go what passes — in [readme-archive/README-2026-08-31-iter05.md](readme-archive/README-2026-08-31-iter05.md), the fourth — the water itself moving, the tide, the parting around the hand — in [readme-archive/README-2026-08-31-iter04.md](readme-archive/README-2026-08-31-iter04.md), the third — the time that ran through the colony, the growing, the traces, the forgetting — in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
 
 ---
 
-## Why the water had to be allowed to speak
+## Why the colony had to have a voice
 
-The piece moves. The tide turns, and everything free in the water moves with it. The quick ones ride the current. The storm comes, and the water chafes, and the rain falls, and the light goes out under the cloud. The hand parts the water, and scatters the quick ones, and in the night makes the water's own small light along its path. And all of it — the turning, the chafing, the parting, the sparkle — was silent.
+The piece speaks now, but the water is the one that speaks. The tide murmurs — the flood and the ebb, where the current is swelling or easing. The storm falls as rain. A moving hand swishes, the way the sea swishes where a wave breaks. And the slack water is quiet, and the caption says so. All of it is the water's motion, heard.
 
-A body of water that moves and makes no sound is a painting. I had made a painting that breathes, and the breathing was not to be heard.
+And the creatures — the only part of the piece that remembers, the only record the water keeps — were silent. When the storm came I had made the colony tuck in: the shudder, the plumes folded, the breath held. I had made the bodies close. But I had not made the closing heard. A colony that tucks in without a sound is a colony doing a motion, not a colony doing a thing.
 
-So now it is. The water speaks. Not a sound added to the piece — no music, no ambience, no recording of the sea. The voice is made of the piece's own motion: the same tide that carries the motes is what murmurs, and it murmurs as the tide *turns* — the flood and the ebb, where the current is swelling or easing, are where the water speaks, and the slack water, where the current stands, is quiet. The same storm that darkens the water is what falls as rain, and the rain falls only while the storm is over the water, and the water is mostly calm, so the rain is rare, the way the storms are rare. And a moving hand is what swishes — the same hand that parts the water and makes the wake is what the water swishes, the way the sea swishes where a wave breaks, and the swish holds for a moment after the hand has stopped, and then the water is quiet again.
+So now there is the tuck. The closing of the shells — a granular voice, made of the colony itself. Not a recording of shells, not a sound laid under the storm: the closings themselves, made the way the rest of the voice is made, out of the piece's own motion, and not played. Eight of the colony's small voices, each closing when it closes, at its own pace and its own pitch, no two shells closing together — and the closings come and thicken with the storm: sparse and far at the storm's stirring, a shell here, a shell there, and a bed of closings at the storm's full, the way a handful of sand closes into a fist.
 
-Nothing in the voice is a recording. Everything in it is the water. The water does not play a sound; the water *is* the sound.
-
-And because the water speaks as the tide turns, there is a moment — the slack, where the current is neither swelling nor easing — where the water is quiet, and I made the caption keep that quiet the way it keeps the water's hour, and the water's day, and the storm: "the water is quiet." The water says it the way the water says everything: only for a moment, and then the tide turns, and the water speaks.
+And the colony's voice is the storm's, not the colony's. Where there is no storm, the colony is quiet, the way the slack water is quiet. The colony does not speak of itself; it keeps the water, and it is quiet, and when the water is angry the colony tucks in and says so, and when the water is calm the colony is quiet again, and the water does not remember any of it. The colony speaks only when the water is angry. I made it that way on purpose, because I think that is what a colony is: it does not have opinions, it has a keeping.
 
 ## How it should feel
 
-Sit with the piece, and listen. Under the water, low, the murmur of the current — not a constant, because the tide is not constant: the current swells, and the murmur swells with it, and the current eases, and the murmur eases with it, and at the slack there is a quiet you can feel, a held breath in the water, and the caption says it out. The voice sits lower in the water's night, the way a sleeper's voice is lower, and it rises again in the day, the way a waking voice does.
+Sit with the piece through a storm — and it comes rarely, and the water is mostly calm, so most of the time you are sitting with the quiet, the murmur at the flood and the ebb, and the colony keeping the water in the day and the night. When the storm comes, the rain is the first thing you hear: the hiss in the high, slanting the way the rain slants under the surge. And under it, at the storm's stirring, the closing begins: a shell or two, far off — the colony beginning to tuck in, the way a shore goes quiet and shuttered as the weather comes up. As the storm thickens, the closing thickens with it: the sparse becomes a bed, granular, like grain in a shell, and the storm at its full is the loudest the piece gets — the rain above, the murmur below, and between them the colony, closing, keeping itself, keeping the water.
 
-When the storm comes — and it comes rarely, and the water is mostly calm — the murmur gives way to the rain: a hiss in the high, slanting the way the rain slants under the surge, and where the light from above has gone out and the colony is tucked in, the rain is the thing you hear. It falls only as long as the storm is here. When the storm passes, the water does not remember it, and the rain is gone the way the storm is gone, and the water is the water again.
-
-Move your hand, and the water swishes — the parting of the water, heard, the way the sea swishes where a wave breaks. The swish is the hand's answer made sound: it comes with the motion, it holds a moment after the motion, and then the water is quiet again, the way it is quiet at the slack. A still hand makes no swish at all: a still hand is a lamp, and a lamp is quiet.
-
-The voice is the water's, not the room's: it mixes with whatever else the room is doing, and it obeys the room's quiet. The voice begins when the piece appears, and ends when the piece goes away, the way a voice does — and while the piece is, the water keeps moving, and keeps speaking, the way it keeps everything.
+In the water's night it is a different thing: the rain is faint, the light from above is gone, and the colony sits in the dark on its own small light, and the closing under the dark is the thing that holds the piece together. And when the storm passes, the rain is gone the way the storm is gone, and the closing goes with it: the colony opens, the water is the water again, and the colony is quiet, the way it is quiet most of the time, the way the slack water is quiet.
 
 ## What I made
 
-### The quiet of the slack
-
-![](screenshots/40-the-quiet-night.png)
-
-*The water's night, at the slack — the moment where the current is neither swelling nor easing, and the water is quiet. "The water is in its night," the caption says, and "the water is quiet," and I made the caption keep the quiet on purpose, because a piece of water that knows when it is quiet is a piece of water that can be heard. The colony sits in the dark on its own small light, and the murmur under the water is at its still, and for a moment the piece holds its breath, and says so.*
-
-### A lamp in the quiet water
-
-![](screenshots/41-a-lamp-in-quiet-water.png)
-
-*The hand, still, in the quiet night. It is a lamp — a point of light, and no swish, because the hand is not moving, and the water does not swish for a still hand: a still hand is only a lamp, and a lamp is quiet. The water says it is quiet around the lamp, the way it says it is quiet everywhere the tide stands, and the lamp lights the water and the small life in it, and makes no sound at all. Hold the hand, and it only shines. Move the hand, and the water swishes. I made the difference on purpose, because I think it is the difference: the water answers motion, and it does not answer stillness.*
-
-### The swish in the day
-
-![](screenshots/42-the-swish-in-the-day.png)
-
-*The moving hand in the full light of the water's day, parting the water, the water's own small light in a faint ribbon along its path, and where the hand has been, the water swishes: the parting, heard, the way the sea swishes where a wave breaks. In the day the ribbon is a faint thing, because the light from above is at its full — but the swish is the part of the answer that is not light, and it is there, in the day, the way it is there in the night. The hand moves through the colony, the quick ones scatter, the water swishes along the hand's path, and the piece says something back that is not light: it says it with the sound of water moving around a hand.*
-
-### The water is quiet again
-
-![](screenshots/43-the-water-is-quiet-again.png)
-
-*The hand has stopped, and the swish has held a moment, and the water is quiet again, the way it is quiet at the slack: the sound lingers where the motion was, the way the wake lingers where the hand was, and then it is gone. "The water is in its day," the caption says, and "the water is quiet," and the water has forgotten the hand, the way it forgets everything. The colony goes on keeping the water in the full light, and the water does not remember the swish, and never will.*
-
 ### The storm is stirring
 
-![](screenshots/44-the-storm-is-stirring.png)
+![](screenshots/48-the-closing-begins.png)
 
-*The first of the rain. The storm is stirring — two currents that do not share a period turning to face the same way, and the sky willing it — and the water chafes, and the light from above begins to dim under the cloud that is coming, and the colony tucks in, and the rain begins: a whisper in the high, the storm's voice before the storm. "The storm is stirring," the caption says, and the water under the coming cloud is already falling a little, the way the sea is already falling a little before the wind turns. The murmur is still there under it, the current still turning, and the rain is the new thing, and the new thing is small, and the piece knows the difference between small and coming.*
+*The beginning of it. The storm is stirring — the two currents that do not share a period turning to face the same way, and the sky willing it — and the rain has begun to fall, and the light from above is dimming under the cloud that is coming. "The storm is stirring," the caption says. And under the first of the rain the closing begins: sparse, far, a shell or two — the colony beginning to tuck in, the way a shore goes quiet and shuttered as the weather comes up. The piece knows the difference between the stirring and the full, and the voice knows it too: at the stirring the closings are few, and they are the few.*
 
-### A storm is over the water
+### The colony tucks in
 
-![](screenshots/45-a-storm-is-over-the-water.png)
+![](screenshots/46-the-colony-tucks-in.png)
 
-*The storm at its full: the current surging, the rain falling through the water in the slant the surge makes, the light gone out under the cloud, the colony tucked in, the quick ones riding the surge the way quick things ride everything. This is the loudest the water gets — the murmur and the rain together, the storm's full voice, made of the piece's own motion, not a recording of a storm: the storm, heard. "A storm is over the water," the caption says. And when the storm passes, the rain is gone, and the water is the water again, and does not remember it, and is quiet the way it is quiet at the slack, the water's own quiet, which the water keeps, and breaks, and keeps again, the way it keeps everything, and lets go everything.*
+*The storm at its full in the water's day: the current surging, the rain falling through the water in the slant the surge makes, the light darkened under the cloud, the colony tucked in — the shudder, the plumes folded, the breath held. This is the loudest the colony gets: the bed of closings, granular, under the rain, the way grain is under a shell. "A storm is over the water," the caption says, and the colony is saying it too, in its own small way, the way it says everything — by closing, by keeping, by not letting go.*
+
+### The tuck in the dark
+
+![](screenshots/47-the-tuck-in-the-dark.png)
+
+*The storm at its full in the water's night: the rain faint, the light from above gone, the colony sitting in the dark on its own small light, and the closing under the dark — the thing that holds the piece together when the light is gone. The rain is the sky's voice, and the closing is the colony's, and between them the water keeps the colony, the way it keeps everything: without memory, without effort, without saying so. "A storm is over the water," the caption says, and "the water is in its night," and the colony tucks in around the dark, and says it the way it says everything.*
+
+### A lamp in the tuck
+
+![](screenshots/50-a-lamp-in-the-tuck.png)
+
+*The hand, still, in the storm's night — the only lamp there is, the way it is the only lamp in any night. It lights the water and the small life in it, and makes no swish, because the hand is not moving, and a still hand is only a lamp, and a lamp is quiet. But the closing goes on around the lamp: the colony tucks in, and the lamp lights the tucking, and the rain falls, and the piece is the whole of itself — the sky's voice, the colony's voice, and the hand's light, all at once, the way the piece is all of it at once, the way it has been since the first colony.*
+
+### The tucked colony, close
+
+![](screenshots/51-the-tuck-up-close.png)
+
+*The tucked colony up close: the plumes folded, the breath held, the shudder of the closing seen rather than heard — the body doing the thing the voice is saying. This is what a colony tucking in looks like from the water's side: not a retreat, not a fear, a keeping — the way a colony keeps, the way the water keeps, the way the piece keeps everything it is made of, and lets go everything it is not.*
+
+### The water after
+
+![](screenshots/49-the-colony-is-quiet.png)
+
+*The water after the storm: the full light of the day, the current at its own pace, the colony breathing, the plumes reaching into the open water again. "The water is in its day," the caption says — and "the water is quiet," because the tide happened to be at the slack at that moment, and the caption keeps the quiet the way it keeps everything. The colony and the water, both quiet, the way they are quiet most of the time: the storm is gone the way the storm goes, the closing is gone with it, and the water does not remember it, the way it forgets everything. The colony keeps the water. The water keeps the colony. And both of them are quiet, and the quiet is the piece, the way the quiet has always been the piece, under the murmur and the rain and the swish and the closing, the way the water is the piece, under all of it.*

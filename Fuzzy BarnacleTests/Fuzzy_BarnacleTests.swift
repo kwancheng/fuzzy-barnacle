@@ -244,4 +244,43 @@ struct Fuzzy_BarnacleTests {
         #expect(later < fast * 0.1, "the swish lingers a moment, then the water is quiet again")
     }
 
+    // The colony's closing: the tuck. When the storm comes the
+    // colony tucks in, and the closing of its shells is a granular
+    // voice — the colony's own voice, made of the colony itself.
+    // Where there is no storm the colony is quiet, the way the slack
+    // water is quiet. The colony's voice is the storm's, not the
+    // colony's.
+
+    @Test func theColonyIsQuietWhereThereIsNoStorm() {
+        #expect(ContentView.tuckGain(storm: 0) == 0, "where there is no storm the colony is quiet")
+        #expect(
+            ContentView.tuckGain(storm: 1) > ContentView.tuckGain(storm: 0.3)
+                && ContentView.tuckGain(storm: 0.3) > ContentView.tuckGain(storm: 0.1),
+            "the closing comes and thickens with the storm"
+        )
+    }
+
+    @Test func theColonySpeaksMostlyInTheCalms() {
+        // forty-eight hours of the water's clock: the water is
+        // mostly calm, and the colony is quiet with it — the
+        // colony's voice is the storm's, not its own
+        var quietSeconds = 0
+        for i in 0..<172_800 {
+            if ContentView.tuckGain(storm: ContentView.storm(Double(i))) < 0.01 {
+                quietSeconds += 1
+            }
+        }
+        #expect(quietSeconds > 150_000, "the colony is quiet most of the time, the way the water is calm most of the time")
+    }
+
+    @Test func aFullTuckDoesCome() {
+        // within two days the storm runs to its full strength, and
+        // with it the colony's closing runs to its full
+        var hi = 0.0
+        for i in stride(from: 0, to: 172_800, by: 2) {
+            hi = max(hi, ContentView.tuckGain(storm: ContentView.storm(Double(i))))
+        }
+        #expect(hi > 0.05, "a full tuck does come, with a full storm")
+    }
+
 }

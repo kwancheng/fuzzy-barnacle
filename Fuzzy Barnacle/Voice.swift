@@ -9,7 +9,12 @@ import os.log
 /// that darkens the water is what falls as rain. And a moving hand
 /// is what swishes, the way the sea swishes where a wave breaks —
 /// the same hand that makes the wake makes the swish, and a still
-/// hand makes neither: a still hand is only a lamp.
+/// hand makes neither: a still hand is only a lamp. And the colony,
+/// when the storm comes and it tucks in, closes its shells, and
+/// the closing is a granular voice, made of the colony itself:
+/// sparse at the storm's stirring, a bed of closings at the
+/// storm's full, and quiet where there is no storm, the way the
+/// slack water is quiet.
 ///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
@@ -32,6 +37,7 @@ final class WaterVoice: ObservableObject {
     private let targetLock = NSLock()
     private var murmurTarget: Double = 0
     private var rainTarget: Double = 0
+    private var tuckTarget: Double = 0
     private var swishTarget: Double = 0
     private var cutoffTarget: Double = 500
 
@@ -47,6 +53,31 @@ final class WaterVoice: ObservableObject {
     private var level: Double = 0
     private var framesSinceLevelLog: Int = 0
 
+    // The colony's closing: many small voices, each closing when it
+    // closes, at its own pace and its own pitch, the way no two
+    // shells close together. The closing is a short sharp voice —
+    // a shell that has closed, gone in a moment.
+    private struct Clicker {
+        var baseFreq: Double
+        var freq: Double
+        var phase: Double
+        var env: Double
+        var nextIn: Int
+        var weight: Double
+    }
+    private var clickers: [Clicker] = []
+    private var tuckGain: Double = 0
+
+    /// The voice's own draw: a unit random, the way the water draws
+    /// its motes
+    @inline(__always)
+    private func drawRng() -> Double {
+        rngState ^= rngState << 13
+        rngState ^= rngState >> 7
+        rngState ^= rngState << 17
+        return Double(rngState & 0x00FFFFFF) / 0x00800000
+    }
+
     init() {
         // the water's own clock of samples: forty-four thousand a
         // second, one channel — the voice is one voice. The engine's
@@ -54,6 +85,20 @@ final class WaterVoice: ObservableObject {
         // spoken to only when the water is actually going to speak.
         format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)
             ?? AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1)!
+        // the colony's closing: eight of the colony's small voices,
+        // each at its own pace and its own pitch, the way no two
+        // shells are the same
+        for _ in 0..<8 {
+            let f = drawRng()
+            clickers.append(Clicker(
+                baseFreq: 1300 + 1900 * f,
+                freq: 1300 + 1900 * f,
+                phase: 0,
+                env: 0,
+                nextIn: Int(drawRng() * 44_100),
+                weight: 0.8 + 0.4 * drawRng()
+            ))
+        }
     }
 
     // The voice's own quiet thread: the water's audio service is
@@ -137,27 +182,29 @@ final class WaterVoice: ObservableObject {
 
     /// The piece tells the voice what it is doing: how fast the
     /// current is turning (the murmur), how much storm is over the
-    /// water (the rain), the swish where the hand has been (the
-    /// water's answer, heard), and how low the voice should sit
-    /// (lower, in the water's night). The voice eases toward each
-    /// of them, the way water eases.
-    func update(murmur: Double, rain: Double, swish: Double, cutoff: Double) {
+    /// water (the rain), the closing of the colony's shells where
+    /// the storm tucks the colony in (the tuck), the swish where
+    /// the hand has been (the water's answer, heard), and how low
+    /// the voice should sit (lower, in the water's night). The
+    /// voice eases toward each of them, the way water eases.
+    func update(murmur: Double, rain: Double, tuck: Double, swish: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
+        tuckTarget = tuck
         swishTarget = swish
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + swish > 0.03
+        let isSpeaking = murmur + rain + tuck + swish > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, swish: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, swish: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, swishTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, swishTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -169,8 +216,15 @@ final class WaterVoice: ObservableObject {
         // where the deep voice sits: lower in the water's night,
         // the way a sleeper's voice is lower
         let cutoffAlpha = 1 - exp(-2 * .pi * target.cutoff / Double(format.sampleRate))
+        // the colony's closing: the closings come and thicken with
+        // the storm — sparse and far at the storm's stirring, a bed
+        // of closings at its full — and still where there is no
+        // storm, the way the slack water is still
+        let tuckDensity = min(1, target.tuck / 0.06)
+        let tuckMean = 0.08 + 2.9 * pow(1 - tuckDensity, 3)
 
         var sum: Double = 0
+        var tuckSum: Double = 0
         for frame in 0..<Int(frameCount) {
             // the water's own noise: a draw of white, remembered
             // into brown
@@ -188,14 +242,38 @@ final class WaterVoice: ObservableObject {
             let rainHiss = white - rainLow
             swishLow += 0.05 * (white - swishLow)
             let swishHiss = white - swishLow
+            // the colony's closing: each of the colony's small
+            // voices closes when it closes, at its own pace and its
+            // own pitch — a shell that has closed, gone in a moment
+            for ci in clickers.indices {
+                var c = clickers[ci]
+                c.nextIn -= 1
+                if c.nextIn <= 0 {
+                    c.env = 1
+                    c.phase = 0
+                    let jitter = 0.4 + drawRng()
+                    c.nextIn = max(220, Int(Double(format.sampleRate) * tuckMean * jitter))
+                    // each closing is slightly off the last, the way
+                    // no two shells are the same
+                    c.freq = c.baseFreq * (0.97 + 0.06 * drawRng())
+                }
+                c.phase += 2 * .pi * c.freq / Double(format.sampleRate)
+                if c.phase >= 4 * .pi { c.phase -= 4 * .pi }
+                c.env *= 0.994
+                tuckSum += sin(c.phase) * c.env * c.weight
+                clickers[ci] = c
+            }
             // the voice eases toward what the water is doing, the
             // way water eases: the murmur slowly, the rain at the
-            // storm's pace, the swish at the hand's
+            // storm's pace, the colony tucks in slowly, and the
+            // swish at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
+            tuckGain += (target.tuck - tuckGain) * 0.004
             swishGain += (target.swish - swishGain) * 0.05
             var out = murmurLow * murmurGain * 2.4
                 + rainHiss * rainGain * 1.2
+                + tuckSum * tuckGain * 1.2
                 + swishHiss * swishGain
             // a soft edge, the way the water has soft edges
             out = tanh(out * 1.4) / tanh(1.4)
@@ -206,7 +284,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f", level)
+            os_log("fb voice: level %f (tuck %f)", level, tuckGain)
         }
     }
 }
