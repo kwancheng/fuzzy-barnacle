@@ -196,4 +196,52 @@ struct Fuzzy_BarnacleTests {
         #expect(mid > 0 && mid < 1, "the wake lingers a moment, then fades")
     }
 
+    // The voice: the water's voice is the water's own motion, heard.
+    // The same tide that carries the motes is what murmurs — and it
+    // murmurs as the tide *turns*, so the slack water is quiet. The
+    // storm is what falls as rain, and a moving hand is what
+    // swishes, the way the sea swishes where a wave breaks. A still
+    // hand makes no swish at all: a still hand is only a lamp.
+
+    @Test func theWaterSpeaksAsTheTideTurns() {
+        // over two days of the water's clock there is a slack — a
+        // moment where the current is neither swelling nor easing,
+        // and the water is quiet — and there is a full turn, where
+        // the flood or the ebb is at its fastest and the water is
+        // speaking
+        var quietest = 1.0
+        var loudest = 0.0
+        for i in 0..<345_600 {
+            let t = Double(i) * 0.5
+            let m = ContentView.murmurGain(
+                strengthNow: ContentView.tide(t).strength,
+                strengthThen: ContentView.tide(t - 2).strength
+            )
+            quietest = min(quietest, m)
+            loudest = max(loudest, m)
+        }
+        #expect(quietest < 0.02, "at the slack the water is quiet")
+        #expect(loudest > 0.10, "with the flood and the ebb the water speaks")
+    }
+
+    @Test func theRainIsTheStormsVoice() {
+        #expect(ContentView.rainGain(storm: 0, light: 1) == 0, "where there is no storm there is no rain")
+        #expect(
+            ContentView.rainGain(storm: 0.5, light: 1) > ContentView.rainGain(storm: 0.2, light: 1),
+            "the rain falls with the storm"
+        )
+        #expect(
+            ContentView.rainGain(storm: 1, light: 1) > ContentView.rainGain(storm: 1, light: 0.02),
+            "the rain keeps a little more of itself in the day"
+        )
+    }
+
+    @Test func theMovingHandMakesASwish() {
+        #expect(ContentView.handSwish(speed: 0, age: 0) == 0, "a still hand makes no swish — a still hand is only a lamp")
+        let fast = ContentView.handSwish(speed: 450, age: 0)
+        #expect(fast > 0.2, "a fast hand parts the water, and the water swishes")
+        let later = ContentView.handSwish(speed: 450, age: 3)
+        #expect(later < fast * 0.1, "the swish lingers a moment, then the water is quiet again")
+    }
+
 }

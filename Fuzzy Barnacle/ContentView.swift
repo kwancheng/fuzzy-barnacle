@@ -22,7 +22,11 @@ import SwiftData
 /// again, and does not remember it. And a hand moving through the
 /// dark stirs the water's own small light along its path, the way
 /// the sea sparkles where a wave breaks — and the water forgets
-/// that light, the way it forgets everything.
+/// that light, the way it forgets everything. And the water
+/// speaks: the same tide that carries the motes is what murmurs,
+/// the same storm is what falls as rain, and a moving hand is what
+/// swishes, the way the sea swishes where a wave breaks — and the
+/// slack water is quiet, and the water says so.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -49,6 +53,11 @@ struct ContentView: View {
     // the way the sea sparkles where a wave breaks — kept only so
     // long as the light lasts, and no longer
     @State private var handTrail: [WakeSample] = []
+
+    // the voice: the water's own motion, heard — the tide that
+    // carries the motes is what murmurs, the storm is what falls
+    // as rain, and the moving hand is what swishes
+    @StateObject private var voice = WaterVoice()
 
     struct Ripple: Identifiable {
         let id: Int
@@ -87,6 +96,8 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear { voice.start() }
+        .onDisappear { voice.stop() }
         .task {
             // the water forgets: traces are kept for a while, then gone
             while !Task.isCancelled {
@@ -94,6 +105,37 @@ struct ContentView: View {
                 try? await Task.sleep(for: .seconds(20))
             }
         }
+        .task {
+            // the water speaks: the piece tells the voice what it is
+            // doing, a few times a second, and the voice eases toward
+            // it, the way water eases
+            while !Task.isCancelled {
+                speak()
+                try? await Task.sleep(for: .seconds(0.25))
+            }
+        }
+    }
+
+    /// One telling of the voice: how fast the current is turning
+    /// (the murmur), how much storm is over the water (the rain),
+    /// the swish where the hand has been, and how low the voice
+    /// sits, which is lower in the water's night. The swish runs on
+    /// the world's time, the way the hand's other answers do — it
+    /// is the hand the water knows, not the clock the water keeps.
+    private func speak() {
+        let now = Date.now
+        let vnow = now.addingTimeInterval(Self.timeOffset)
+        let t = vnow.timeIntervalSinceReferenceDate
+        let light = Self.drawnLight(t)
+        voice.update(
+            murmur: Self.murmurGain(
+                strengthNow: Self.tide(t).strength,
+                strengthThen: Self.tide(t - 2).strength
+            ),
+            rain: Self.rainGain(storm: Self.storm(t), light: light),
+            swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
+            cutoff: 240 + 660 * (0.3 + 0.7 * light)
+        )
     }
 
     private func pruneGhosts() {
@@ -272,9 +314,10 @@ struct ContentView: View {
     }
 
     private var caption: some View {
-        // the water keeps time, and the water has a day: the
-        // caption keeps the water's hour as well
-        TimelineView(.periodic(from: .now, by: 30)) { timeline in
+        // the water keeps time, and the water has a day, and the
+        // water speaks: the caption keeps the water's hour and the
+        // water's voice as well
+        TimelineView(.periodic(from: .now, by: 5)) { timeline in
             // the caption keeps the water's time: the piece's own
             // clock, shifted when it is shifted
             let vnow = timeline.date.addingTimeInterval(Self.timeOffset)
@@ -294,6 +337,11 @@ struct ContentView: View {
                 }
                 if let stormLine = stormLine(for: vnow) {
                     Text(stormLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+                if let quietLine = quietLine(for: vnow) {
+                    Text(quietLine)
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
@@ -353,14 +401,38 @@ struct ContentView: View {
         return nil
     }
 
+    /// The water's voice, as the caption keeps it: the water speaks
+    /// as the tide turns, and the flood and the ebb speak, and the
+    /// caption does not need to say that. Only at the slack — and
+    /// not in the storm, and not where a moving hand has been
+    /// swishing — is the water quiet, and only then does the caption
+    /// say so.
+    private func quietLine(for now: Date) -> String? {
+        let t = now.timeIntervalSinceReferenceDate
+        let murmur = Self.murmurGain(
+            strengthNow: Self.tide(t).strength,
+            strengthThen: Self.tide(t - 2).strength
+        )
+        guard murmur < 0.03 else { return nil }
+        guard Self.storm(t) < 0.1 else { return nil }
+        // the swish is the hand's answer, and the hand is the
+        // world's: it keeps the world's time, not the water's
+        guard Self.handSwish(
+            speed: handSpeed,
+            age: max(0, Date.now.timeIntervalSince(handSpeedAt))
+        ) < 0.03 else { return nil }
+        return "the water is quiet"
+    }
+
     // MARK: - The Current
 
     /// The water is one body. A tide runs through it — slowly turning,
     /// swelling and easing — and everything free in it moves with it:
     /// the motes are carried, the light leans, the plumes of the
     /// anchored creatures reach into it. Nothing in the water moves
-    /// alone.
-    private func tide(_ t: Double) -> (angle: Double, strength: Double) {
+    /// alone. And the turning of this tide is what the water says
+    /// when it speaks.
+    static func tide(_ t: Double) -> (angle: Double, strength: Double) {
         // the tide turns on a long breath, and swells and eases;
         // in the storm the water chafes — the current surges, and
         // chatters fast and less sure of its way
@@ -373,7 +445,7 @@ struct ContentView: View {
 
     /// The surface drift the tide makes, in points per second.
     private func tideFlow(_ t: Double) -> (dx: Double, dy: Double) {
-        let tide = tide(t)
+        let tide = Self.tide(t)
         let speed = 2.0 + 5.0 * tide.strength
         return (cos(tide.angle) * speed, sin(tide.angle) * speed)
     }
@@ -474,7 +546,7 @@ struct ContentView: View {
         // stills, it points into the current, the way the colony does
         let speed = hypot(vx, vy)
         let motionAngle = atan2(vy, vx)
-        let heading = Self.blendAngle(tide(t).angle, motionAngle, Self.smoothstep(0.15, 0.9, speed))
+        let heading = Self.blendAngle(Self.tide(t).angle, motionAngle, Self.smoothstep(0.15, 0.9, speed))
 
         // the taste: when the motion stills it pauses, and the
         // filaments open
@@ -707,6 +779,50 @@ struct ContentView: View {
         return 1 - smoothstep(0.12, Self.wakeLife, age)
     }
 
+    // MARK: - The Voice
+
+    /// The water's voice is not added to the piece: it is the
+    /// piece's own motion, heard. The same tide that carries the
+    /// motes is what murmurs — and the water speaks as the tide
+    /// *turns*, so the slack water is quiet, and the flood and the
+    /// ebb speak. The same storm that darkens the water is what
+    /// falls as rain. And a moving hand is what swishes, the way
+    /// the sea swishes where a wave breaks: the same hand that makes
+    /// the wake makes the swish, and a still hand makes neither,
+    /// the way a still hand is only a lamp.
+
+    /// How much of the water's low voice is up at a moment: the
+    /// voice is the *turning* of the current — the change of the
+    /// current's strength, not its strength. At the slack, where the
+    /// strength is neither swelling nor easing, the water is quiet.
+    /// The turning is measured over a two-second window, the way the
+    /// water measures anything: slowly.
+    static func murmurGain(strengthNow: Double, strengthThen: Double) -> Double {
+        let turn = abs(strengthNow - strengthThen) / 2
+        // the voice is a low one: quiet at the slack, up with the
+        // flood and the ebb
+        return 0.14 * smoothstep(0, 0.004, turn)
+    }
+
+    /// The rain the storm brings down, as a voice: it falls only
+    /// when the storm is over the water, and a little less in the
+    /// night, where the dark keeps the water's own small things to
+    /// itself.
+    static func rainGain(storm: Double, light: Double) -> Double {
+        return 0.16 * storm * (0.6 + 0.4 * light)
+    }
+
+    /// The swish of a hand parting the water: the water's answer to
+    /// the hand, heard, the way the wake is the water's answer,
+    /// seen. It lingers a moment after the hand has stopped or
+    /// lifted, and then the water is quiet again. A still hand
+    /// makes no swish at all: a still hand is only a lamp, and a
+    /// lamp is only light.
+    static func handSwish(speed: Double, age: Double) -> Double {
+        let stirred = min(1, speed / 450)
+        return 0.22 * stirred * exp(-max(0, age) * 0.9)
+    }
+
     // MARK: - Virtual Time
 
     /// The piece's own clock can be shifted, for testing and for
@@ -877,7 +993,7 @@ struct ContentView: View {
         // two slow shafts of light, leaning with the tide — and
         // trembling in the storm, the way light trembles under
         // a moving cloud
-        let tideNow = tide(t)
+        let tideNow = Self.tide(t)
         for i in 0..<2 {
             let drift = sin(t * 0.05 + Double(i) * 1.9) * 8
                 + cos(tideNow.angle) * (2.0 + 5.0 * tideNow.strength) * 6
@@ -983,7 +1099,7 @@ struct ContentView: View {
 
         // breathing and drifting — the anchored body leans into the
         // current, the way a holdfast leans into the sea
-        let tideNow = tide(t)
+        let tideNow = Self.tide(t)
         let breathePhase = 2 * .pi * Self.fuzz(seed, 50)
         let driftPhase = 2 * .pi * Self.fuzz(seed, 51)
         let lean = 4.5 * tideNow.strength * (0.7 + 0.6 * Self.fuzz(seed, 56))
