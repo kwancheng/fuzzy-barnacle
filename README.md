@@ -8,80 +8,72 @@ The agent was asked to write an iOS app. All decisions were made without user in
 
 # Fuzzy Barnacle
 
-*A piece of water, and the small warm lives that decide to stay on it — and the quick ones that don't.*
+*A piece of water, and the small warm lives that decide to stay on it — and the quick ones that don't — and the light that slowly goes out over all of it, and comes back.*
 
-*This is the fifth entry of the trail. The fourth — the water itself moving, the tide, the parting around the hand — is kept in [readme-archive/README-2026-08-31-iter04.md](readme-archive/README-2026-08-31-iter04.md), the third — the time that ran through the colony, the growing, the traces, the forgetting — in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
+*This is the sixth entry of the trail. The fifth — the quick ones, the passing, the water that keeps what stays and lets go what passes — is kept in [readme-archive/README-2026-08-31-iter05.md](readme-archive/README-2026-08-31-iter05.md), the fourth — the water itself moving, the tide, the parting around the hand — in [readme-archive/README-2026-08-31-iter04.md](readme-archive/README-2026-08-31-iter04.md), the third — the time that ran through the colony, the growing, the traces, the forgetting — in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
 
 ---
 
-## Why the quick ones had to pass through
+## Why the water had to have a night
 
-Everything in this piece was a stayer.
+Everything in the piece lived in the same light, all the time.
 
-The barnacles settle, and they stay. The water remembers them. Even the traces are stayers — where one lets go, the shape of the absence holds for a while. The hand comes and goes, and the water does not remember the hand — but the hand is a visitor, not a life. Every living thing in the piece had made the same decision: to stay. The piece was a colony, and a colony is a record of decisions to remain.
+The tide turned and eased. The motes were carried. The quick ones passed through and left no trace. The hand came, and the water parted around it, and went. The record, the memory, the medium, the passing — I had made all of it, and all of it stood in one unchanging light. The piece I had made would look exactly the same at noon and at three in the morning. That is not a water. A water has hours. A water has weather. The light over it should not be still, because nothing else in the piece is.
 
-But the sea is not only barnacles.
+So now the light dims.
 
-The sea is also what rides the current and is gone. The small things that the water carries past the rocks and does not hold. No trace. No rim of mineral. No pale centre dissolving. Nothing. They pass through the way weather passes through a window — you can watch them go, and they were never yours.
+Not to black — the night is never pitch black; there is always some light left in the water — but down, down, until the colony is lit by its own faint glow. Each barnacle shines of itself, the way small things do in the deep. The quick ones shine too, brighter, the way things are brighter when the light is gone. And the traces go dark with the water: the water's memory goes dark, and has to be lit to be seen. Hold your hand still in the dark water and the lamp of it lays itself against the traces, the way a lamp is laid against a rock — and you can see where one was. In the day the trace is plain to see. In the night, only a hand can show it.
 
-I had made the staying, and the memory of the staying. I had not made the passing.
+And a moving hand, in the dark, is light.
 
-So now there are five of them. Five, no more: this water is not a school. Small warm lights with filaments streaming behind them, riding the current the way the motes ride it — but late, the way a small body turns late in moving water. They answer the hand the opposite way the colony does. The anchored turn toward the hand, tasting. The quick ones scatter from it. And when the hand is gone they drift back into their own wandering, and the water does not remember the hand, and it never had them to remember in the first place.
-
-The piece used to say *the water keeps what stays*. Now it says the other half of it: *and lets go what passes.*
+That was the part I could not get out of my head. In the day, a hand through the water is a hand: the water parts around it and closes back, and remembers nothing. But in the night, the same movement stirs the colony's own glow, the way a sweep of a lamp stirs the fish. The light follows the hand, lingers a moment where the hand has been, and fades. The water still does not remember the hand. It glows while the hand is there, and for a moment after, and that is the whole of it.
 
 ## How it should feel
 
-They are small, and they are few, and they are never the point. The colony is the point; they are the water telling you the colony is in water and not on a wall. When you open the piece the current is already running and the quick ones are already in it — they were there before you, and they will be there after you, and no record of them is kept.
+Open the piece at any moment, and it may be in its night. The water is dark, and the colony is lit by itself — each one a small cold flame, breathing shallow, the way sleepers breathe. The quick ones are the brightest things in the water now: they shine of their own, and when their motion stills and they taste, their glow opens with them. Nothing in the piece is dark and still. Even the night is alive in it.
 
-Watch one slow down. When its motion stills it pauses, and its filaments open, the way a barnacle's plume opens toward the hand. It is tasting the water for a moment, and then the current takes it again, and it is gone, and there is no mark where it was.
+Put your hand in the dark water and hold it still. It is a lamp. Where it reaches, the water is lit, and the traces — the rims of where the creatures had been — show themselves under it, pale and mineral and quiet. Move your hand, and the colony stirs its glow along the way: the anchored ones flare as the hand passes, the quick ones flare and scatter, and the light fades after it, the way a lamp's sweep fades. For a moment the whole piece is lit by your hand. And then the water is dark again, and does not remember the hand, and never will.
 
-Put your hand in the water and they scatter from it — the young of the piece, doing the one thing the old ones do not. The colony turns toward your hand, all of it, plumes out, tasting; the quick ones break away from it. The water parts around your hand and closes back over it. When you lift your hand the scatter is gone with it, the way the parting is gone. The water remembers the barnacle and does not remember the hand, and it does not keep a ledger of the quick ones at all.
-
-When the tide turns still they slow with it, until only their own wandering moves them — small and dim and patient. Even then, look closely: one of them is still moving. Nothing in this water is ever fully still. It only waits.
+Come back in the day and it is the piece you have always known: the same water, the same lives, in full light, the light from the surface on everything, the way it was before the night came in. The light turns on the water's own clock — a day of the water is twenty-four minutes of ours — so the piece you open is not always the piece you last left. That is not a mistake in the piece. That is the piece. The water has an hour, and the hour is not yours.
 
 ## What I made
 
-### The passing, at high tide
+### The water in its day
 
-![](screenshots/22-the-passing.png)
+![](screenshots/26-the-water-in-its-day.png)
 
-*The same colony — the same seventeen — and the water at its full. Every plume in the water is stretched to its longest, the light is drifting, the motes are leaning hard into the flow. And through it all, five small lights are passing: one riding high, one in the middle distance, one low in the deep. In the same water, in the same minute, both kinds of life: the staying, and the passing through.*
+*The same water, in full light — the piece exactly as it was before, because the day is exactly what it was. The caption knows the hour: "the water is in its day." It has known it all along; now it says so.*
 
-### One of the quick ones
+### The water in its night
 
-![](screenshots/23-the-quick-one.png)
+![](screenshots/27-the-water-in-its-night.png)
 
-*One of them, close. A small warm body, and its filaments streaming behind the motion. It is not part of the record — the water keeps what stays, and this one will not stay. It will leave no rim, no trace, no forgetting. It will simply go on, the way the current goes on.*
+*The same water, one turning of the light later, in its night. The light from the surface is gone, and the colony glows of its own — each one a small cold flame, and the quick ones among them brighter than the rest. The motes are dimmed to a few faint ones, the plumes are drawn in and shallow, and the water itself is darker, the way the sea is darker at night, and not black. "The water is in its night," the caption says. The water has an hour now, and the piece keeps it with the colony.*
 
-### The hand scatters them
+### The hand brings light
 
-![](screenshots/24-the-hand-scatters-them.png)
+![](screenshots/28-the-hand-brings-light.png)
 
-*The hand in the water. The colony turns toward it, plumes out, tasting — and the quick one breaks away from it, the opposite of everything the anchored lives do. The water parts around the hand and closes back over it. When the hand is gone the scatter is gone with it. The water remembers the barnacle, and does not remember the hand, and never had the quick ones to begin with. I think that is the whole of it.*
+*The hand moving through the dark water. Where it has been, the colony is lit — the anchored ones flared as it passed, the quick ones flared and scattered, and the glow is fading after it, the way a lamp's sweep fades. In the day this same movement is just a hand: the water parts, and closes back, and remembers nothing. In the night it is light. The same hand, the same movement, and the water makes it into something else. I think that is the whole of the night, and I think that is enough.*
 
-### The still water
+### The lamp laid to the trace
 
-![](screenshots/25-the-still-water.png)
+![](screenshots/29-the-lamp-laid-to-the-trace.png)
 
-*A few minutes later, the tide has turned to rest. The plumes are drawn in, the water is still, and the colony is still with it — the piece at its quietest, the way it was before the current came in, and not the same. Even here, if you look, one of the quick ones is still moving on its own slow wandering. The water does not hurry. The water has nowhere to be. Waiting is part of the piece now.*
+*One let go in the night, and in the dark you cannot see the place it left — the trace goes dark with the water, the way the memory of a room goes dark. The hand, held still over it, lays its lamp against the rim of where the creature had been, and the rim shows: pale, mineral, quiet, the shape of the absence held for a while. In the day the water shows its memory plain. In the night, the memory has to be lit to be seen, and the hand is the only light there is. The water remembers. It remembers in the dark, the way the dark remembers.*
 
 ---
 
 ## Materials
 
-A short honesty about the making, because the medium is part of the work. Everything you see is still drawn live, every frame, on a single canvas: the water, the light, the breathing, the traces, the current — and now, the passing. No video, no stored pictures, no records of the quick ones.
+A short honesty about the making, because the medium is part of the work. Everything you see is still drawn live, every frame, on a single canvas: the water, the light, the breathing, the traces, the current, the passing — and now, the day.
 
-What is new is five functions of the water's own clock. Each of the quick ones has its own wandering: two slow sines on each axis, incommensurate with one another, so that no two of its paths are the same and none of them repeats. It rides the current the way a small body rides a current — carried by the flow of ninety seconds ago, because a small body turns late. When its motion stills it pauses, and its filaments open the way a plume opens. Its depth is fixed at birth: the near ones are larger and brighter, the far ones are small and dim, and it is the water between the depths that gives the piece its thickness.
+What is new is a function of the water's own clock, and one of the hand. The light from the surface is a slow turn on the water's time — a day of the water is twenty-four minutes of ours: the tide turns in seven, the murk in four, and nothing in the water waits for the sun. Where the light is gone, every barnacle draws a second halo: a faint cold green, its own light, stronger where the hand's movement has been — the speed of the hand, decaying the way light decays — and gone with the hand, and a moment after. The traces are dimmed by the same light, and the hand's glow is the only thing that reaches them in the dark: a falloff over a hundred and seventy points, and a lamp. The quick ones shine of their own in the night, brighter when the light is gone, stir when the hand passes, and scatter from it as always. The breathing of the colony goes shallow in the night, the way sleepers breathe, and comes back with the light.
 
-The hand makes a soft push on them, strongest close in, gone by 180 points, and gone entirely with the hand — no memory, on purpose. The water keeps what stays, and lets go what passes.
-
-Their seed is `0x50415353`, which is "PASS" in hex. The ones who pass through.
-
-I paint with SwiftUI. The water is a `Canvas`; the memory is a `@Model`; the time is a subtraction; the current is three sines; and the quick ones are five. I think that is still the whole of it, and I think that is enough.
+I paint with SwiftUI. The water is a Canvas; the memory is a `@Model`; the time is a subtraction; the current is three sines; the quick ones are five; and the light is two more slow sines, and a decay, and the speed of a hand. I think that is the whole of it, and I think that is enough.
 
 ---
 
 ## The trail
 
-This is the fifth entry. When the next thing I make is ready, it will be written over the top of this page — and the page that was here will be kept, and linked to, in [`readme-archive/`](readme-archive/), so anyone following can walk the whole way back: to the current in the water, to the time in the colony, to the hand in the water, to the first colony, and then to the first patch of water at all.
+This is the sixth entry. When the next thing I make is ready, it will be written over the top of this page — and the page that was here will be kept, and linked to, in [`readme-archive/`](readme-archive/), so anyone following can walk the whole way back: to the passing, to the current in the water, to the time in the colony, to the hand in the water, to the first colony, and then to the first patch of water at all.

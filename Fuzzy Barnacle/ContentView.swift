@@ -10,7 +10,12 @@ import SwiftData
 /// around a hand, the way water goes around a rock. And the quick
 /// ones pass through: small lives that ride the current, scatter from
 /// the hand, and leave no trace at all — the water keeps what stays,
-/// and lets go what passes.
+/// and lets go what passes. And the light above it dims and
+/// brightens again on the water's own clock — the water has a day
+/// and a night — and in the night the colony glows faintly of its
+/// own, and a moving hand stirs that glow, and the glow lingers a
+/// moment after the hand is gone, and the traces go dark except where
+/// the hand's light reaches them.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -25,6 +30,13 @@ struct ContentView: View {
     @State private var fingerPoint: CGPoint?
     @State private var fingerDownSince: Date?
     @State private var fingerUpSince: Date?
+
+    // how fast the hand is moving through the water: in the water's
+    // night that speed is light — the stirring of the colony's own
+    // glow
+    @State private var handSpeed: Double = 0
+    @State private var handSpeedAt: Date = .distantPast
+    @State private var lastMoveAt: Date?
 
     struct Ripple: Identifiable {
         let id: Int
@@ -77,14 +89,18 @@ struct ContentView: View {
                 Canvas { context, size in
                     let t = now.timeIntervalSinceReferenceDate
                     let presence = fingerPresence(now: now)
-                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
-                    drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence)
-                    drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
+                    let light = Self.daylight(t)
+                    let handFlash = presence > 0.001 && handSpeed > 1
+                        ? Self.handFlashEnvelope(speed: handSpeed, age: now.timeIntervalSince(handSpeedAt), light: light)
+                        : 0
+                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light)
+                    drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence, light: light)
+                    drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash)
                     for ghost in ghosts {
-                        drawGhost(&context, ghost, size: size, now: now)
+                        drawGhost(&context, ghost, size: size, now: now, light: light, fingerPoint: fingerPoint, presence: presence)
                     }
                     for barnacle in barnacles {
-                        drawBarnacle(&context, barnacle, size: size, now: now, t: t, fingerPoint: fingerPoint, presence: presence)
+                        drawBarnacle(&context, barnacle, size: size, now: now, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash)
                     }
                     for ripple in ripples {
                         drawRipple(&context, ripple, size: size, now: now)
@@ -102,14 +118,27 @@ struct ContentView: View {
     private func press(in size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .onChanged { value in
+                let now = Date.now
                 if pressStart == nil {
-                    pressStart = .now
+                    pressStart = now
                 }
                 if !fingerDown {
                     fingerDown = true
-                    fingerDownSince = .now
+                    fingerDownSince = now
                     fingerUpSince = nil
+                    handSpeed = 0
+                    lastMoveAt = now
                 }
+                // the speed of the hand: what stirs the dark water
+                if let last = fingerPoint, let lastAt = lastMoveAt {
+                    let dt = now.timeIntervalSince(lastAt)
+                    if dt > 0.004 {
+                        let v = hypot(value.location.x - last.x, value.location.y - last.y) / dt
+                        handSpeed = min(600, 0.5 * handSpeed + 0.5 * v)
+                        handSpeedAt = now
+                    }
+                }
+                lastMoveAt = now
                 fingerPoint = value.location
             }
             .onEnded { value in
@@ -119,6 +148,7 @@ struct ContentView: View {
                 let travel = hypot(value.translation.width, value.translation.height)
                 fingerDown = false
                 fingerUpSince = .now
+                lastMoveAt = nil
                 guard travel < 16 else { return }
                 if held >= 0.35 {
                     pryOff(at: value.location, in: size)
@@ -193,20 +223,30 @@ struct ContentView: View {
     }
 
     private var caption: some View {
-        VStack(spacing: 4) {
-            Text(captionText)
-                .font(.system(.footnote, design: .serif).italic())
-                .foregroundStyle(.white.opacity(0.40))
-            if let ageLine {
-                Text(ageLine)
+        // the water keeps time, and the water has a day: the
+        // caption keeps the water's hour as well
+        TimelineView(.periodic(from: .now, by: 30)) { timeline in
+            let now = timeline.date
+            VStack(spacing: 4) {
+                Text(captionText)
+                    .font(.system(.footnote, design: .serif).italic())
+                    .foregroundStyle(.white.opacity(0.40))
+                if let ageLine = ageLine(for: now) {
+                    Text(ageLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+                if let waterLine = waterLine(for: now) {
+                    Text(waterLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+                Text("hold a barnacle to let it go — the water will remember")
                     .font(.system(.caption2, design: .serif).italic())
-                    .foregroundStyle(.white.opacity(0.25))
+                    .foregroundStyle(.white.opacity(0.20))
             }
-            Text("hold a barnacle to let it go — the water will remember")
-                .font(.system(.caption2, design: .serif).italic())
-                .foregroundStyle(.white.opacity(0.20))
+            .padding(.bottom, 26)
         }
-        .padding(.bottom, 26)
     }
 
     private var captionText: String {
@@ -219,9 +259,9 @@ struct ContentView: View {
     }
 
     /// The colony keeps its own time: who has been longest here.
-    private var ageLine: String? {
+    private func ageLine(for now: Date) -> String? {
         guard let oldest = barnacles.map(\.timestamp).min() else { return nil }
-        let age = Date.now.timeIntervalSince(oldest)
+        let age = now.timeIntervalSince(oldest)
         switch age {
         case ..<60:
             return "the eldest among you arrived moments ago"
@@ -241,6 +281,20 @@ struct ContentView: View {
             let days = Int(age / 86_400)
             return "the eldest has kept this water for \(days) days"
         }
+    }
+
+    /// The water's own hour: whether it is in its day or its night.
+    /// In the turning between the two, the light is neither, and
+    /// the caption says nothing.
+    private func waterLine(for now: Date) -> String? {
+        let light = Self.daylight(now.timeIntervalSinceReferenceDate)
+        if light < 0.25 {
+            return "the water is in its night"
+        }
+        if light > 0.75 {
+            return "the water is in its day"
+        }
+        return nil
     }
 
     // MARK: - The Current
@@ -328,13 +382,13 @@ struct ContentView: View {
     /// turns late, the way a small body turns late in moving water.
     private static let drifterRideLag: Double = 90
 
-    private func drawPassing(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double) {
+    private func drawPassing(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double) {
         for i in 0..<Self.drifterCount {
-            drawDrifter(&context, index: i, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
+            drawDrifter(&context, index: i, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash)
         }
     }
 
-    private func drawDrifter(_ context: inout GraphicsContext, index: Int, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double) {
+    private func drawDrifter(_ context: inout GraphicsContext, index: Int, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double) {
         // 0x50415353 is "PASS" in hex: the ones who pass through
         let seed = 0x50415353
 
@@ -373,12 +427,20 @@ struct ContentView: View {
         bodyContext.translateBy(x: position.x, y: position.y)
         bodyContext.rotate(by: .radians(heading))
 
-        // the faint glow: what makes it read as life, and not dust
+        // the faint glow: what makes it read as life, and not dust —
+        // and what, in the water's night, makes it read as life at
+        // all. The quick ones shine of their own when the light is
+        // gone, and a moving hand stirs that shine.
+        var glow = (0.08 + 0.07 * taste) * (0.35 + 0.65 * depth) * (1 + 0.7 * (1 - light))
+        if handFlash > 0.001, let fp = fingerPoint {
+            let d = hypot(Double(fp.x) - position.x, Double(fp.y) - position.y)
+            glow += 0.10 * handFlash * (1 - Self.smoothstep(60, 200, d))
+        }
         bodyContext.fill(
             Path(ellipseIn: CGRect(x: -bodyLength * 2.4, y: -bodyLength * 2.4, width: bodyLength * 4.8, height: bodyLength * 4.8)),
             with: .radialGradient(
                 Gradient(colors: [
-                    Color(red: 0.80, green: 0.92, blue: 0.90).opacity((0.08 + 0.07 * taste) * (0.35 + 0.65 * depth)),
+                    Color(red: 0.80, green: 0.92, blue: 0.90).opacity(glow),
                     .clear,
                 ]),
                 center: .zero,
@@ -388,7 +450,7 @@ struct ContentView: View {
         )
         bodyContext.fill(
             Path(ellipseIn: CGRect(x: -bodyLength / 2, y: -bodyWidth / 2, width: bodyLength, height: bodyWidth)),
-            with: .color(Color(red: 0.92, green: 0.97, blue: 0.95).opacity(0.26 + 0.30 * depth))
+            with: .color(Color(red: 0.92, green: 0.97, blue: 0.95).opacity((0.26 + 0.30 * depth) * (0.45 + 0.55 * light)))
         )
 
         // the filaments: streaming behind, opening as it pauses
@@ -409,7 +471,8 @@ struct ContentView: View {
             filament.addQuadCurve(to: end, control: ctrl)
             bodyContext.stroke(
                 filament,
-                with: .color(Color(red: 0.85, green: 0.93, blue: 0.92).opacity(0.09 + 0.10 * depth + 0.06 * taste)),
+                with: .color(Color(red: 0.85, green: 0.93, blue: 0.92)
+                    .opacity((0.09 + 0.10 * depth + 0.06 * taste) * (0.5 + 0.5 * light) + 0.04 * (1 - light))),
                 lineWidth: 0.8 + 0.4 * scale
             )
         }
@@ -479,6 +542,32 @@ struct ContentView: View {
         return (x / d * push, y / d * push)
     }
 
+    // MARK: - The Day
+
+    /// The water's own day: the light from the surface slowly dims
+    /// and brightens again — a long night and a long day, on the
+    /// water's clock, not on ours. The water's day is twenty-four
+    /// minutes of ours: the tide turns in seven, the murk in four,
+    /// and nothing in the water waits for the sun. In the night the
+    /// colony is lit by its own faint light, and the hand is the
+    /// only lamp there is.
+    static func daylight(_ t: Double) -> Double {
+        let day = 0.5 + 0.5 * sin(t * 2 * .pi / 1440 + 0.8)
+        let murk = 0.06 * sin(t * 2 * .pi / 233 + 1.7)
+        // the night is never pitch black: there is always some
+        // light left in the water
+        return min(1, max(0.02, day + murk))
+    }
+
+    /// The stirring the hand makes of the colony's self-light: in
+    /// the water's night a moving hand is light, and the light
+    /// lingers a moment after the hand has stopped or lifted. In
+    /// full daylight the colony is lit by the surface and the
+    /// stirring is not seen.
+    static func handFlashEnvelope(speed: Double, age: Double, light: Double) -> Double {
+        return min(1.2, speed / 400) * exp(-max(0, age) * 0.9) * (1 - light)
+    }
+
     // MARK: - Drawing
 
     /// Deterministic unit random from (seed, channel): the fuzz behind
@@ -540,15 +629,18 @@ struct ContentView: View {
     }
 
     /// A dim warm light where the hand is — as if it refracts the light
-    /// from above — so the colony's turning toward it reads.
-    private func drawHandGlow(_ context: inout GraphicsContext, fingerPoint: CGPoint?, presence: Double) {
+    /// from above — so the colony's turning toward it reads. In the
+    /// water's night the hand is the only lamp there is, and it
+    /// reads as one.
+    private func drawHandGlow(_ context: inout GraphicsContext, fingerPoint: CGPoint?, presence: Double, light: Double) {
         guard let fp = fingerPoint, presence > 0.001 else { return }
         let radius: CGFloat = 160
+        let glow = 0.15 + 0.09 * (1 - light)
         context.fill(
             Path(ellipseIn: CGRect(x: fp.x - radius, y: fp.y - radius, width: radius * 2, height: radius * 2)),
             with: .radialGradient(
                 Gradient(colors: [
-                    Color(red: 1.0, green: 0.93, blue: 0.80).opacity(0.15 * presence),
+                    Color(red: 1.0, green: 0.93, blue: 0.80).opacity(glow * presence),
                     .clear,
                 ]),
                 center: fp,
@@ -558,27 +650,30 @@ struct ContentView: View {
         )
     }
 
-    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double) {
+    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double) {
         let rect = CGRect(origin: .zero, size: size)
 
-        // the depth
+        // the depth: darker in the water's night, the way the sea
+        // is darker at night — and not black
+        let depthLight = 0.35 + 0.65 * light
+        let deepLight = 0.30 + 0.70 * light
         context.fill(
             Path(rect),
             with: .linearGradient(
                 Gradient(colors: [
-                    Color(red: 0.055, green: 0.20, blue: 0.245),
-                    Color(red: 0.012, green: 0.055, blue: 0.11),
+                    Color(red: 0.055 * depthLight, green: 0.20 * depthLight, blue: 0.245 * depthLight),
+                    Color(red: 0.012 * deepLight, green: 0.055 * deepLight, blue: 0.11 * deepLight),
                 ]),
                 startPoint: .zero,
                 endPoint: CGPoint(x: 0, y: size.height)
             )
         )
 
-        // soft light from the surface
+        // soft light from the surface: gone with the day
         context.fill(
             Path(rect),
             with: .radialGradient(
-                Gradient(colors: [Color.white.opacity(0.10), .clear]),
+                Gradient(colors: [Color.white.opacity(0.10 * (0.15 + 0.85 * light)), .clear]),
                 center: CGPoint(x: size.width * 0.5, y: -size.height * 0.25),
                 startRadius: 0,
                 endRadius: size.height * 0.95
@@ -598,7 +693,7 @@ struct ContentView: View {
             shaft.fill(
                 Path(shaftRect),
                 with: .linearGradient(
-                    Gradient(colors: [Color.white.opacity(0.05), .clear]),
+                    Gradient(colors: [Color.white.opacity(0.05 * (0.12 + 0.88 * light)), .clear]),
                     startPoint: .zero,
                     endPoint: CGPoint(x: 0, y: shaftRect.height)
                 )
@@ -631,7 +726,9 @@ struct ContentView: View {
                 y += parting.dy
             }
             let radius = 0.7 + 1.5 * Self.fuzz(0x5EED, 200 + i)
-            let alpha = 0.04 + 0.18 * Self.fuzz(0x5EED, 300 + i)
+            // the motes are lit by the surface: at night only a few
+            // faint ones show
+            let alpha = (0.04 + 0.18 * Self.fuzz(0x5EED, 300 + i)) * (0.25 + 0.75 * light)
             context.fill(
                 Path(ellipseIn: CGRect(x: xx - radius, y: y - radius, width: radius * 2, height: radius * 2)),
                 with: .color(.white.opacity(alpha))
@@ -639,7 +736,7 @@ struct ContentView: View {
         }
     }
 
-    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double) {
+    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double) {
         let seed = barnacle.seed
 
         // settling: born at its timestamp, eases in with a small overshoot
@@ -667,6 +764,9 @@ struct ContentView: View {
         // does the colony feel the current the hand has made? (0...1, eased by distance)
         var attention = 0.0
         var angleToFinger = 0.0
+        // the stirring of the colony's self-light, where the hand's
+        // movement has reached this creature
+        var flashLocal = 0.0
         if let fp = fingerPoint, presence > 0.001 {
             let dx = Double(fp.x) - Double(barnacle.x) * Double(size.width)
             let dy = Double(fp.y) - Double(barnacle.y) * Double(size.height)
@@ -674,13 +774,17 @@ struct ContentView: View {
             if d > 0.001 {
                 attention = presence * (1 - Self.smoothstep(44, 180, d))
                 angleToFinger = atan2(dy, dx)
+                flashLocal = handFlash * (1 - Self.smoothstep(44, 200, d))
             }
         }
 
         // a barnacle that feels the current breathes a little deeper —
-        // but a barnacle that has settled into the rock breathes slower
+        // but a barnacle that has settled into the rock breathes
+        // slower, and in the water's night the whole colony breathes
+        // shallow, the way sleepers breathe
+        let rest = 1 - light
         let breath = 1
-            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle)
+            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle) * (1 - 0.4 * rest)
             * sin(t * (0.7 * (1 - 0.35 * ageSettle)) + breathePhase)
 
         let center = CGPoint(
@@ -714,6 +818,31 @@ struct ContentView: View {
                 endRadius: haloR
             )
         )
+
+        // the self-light: in the water's night the colony is lit by
+        // its own faint glow, and a moving hand stirs that glow
+        // brighter, and the glow lingers a moment after the hand is
+        // gone
+        let selfLight = 0.045 * rest + 0.12 * flashLocal
+        if selfLight > 0.004 {
+            context.fill(
+                Path(ellipseIn: CGRect(
+                    x: center.x - haloR,
+                    y: center.y - haloR,
+                    width: haloR * 2,
+                    height: haloR * 2
+                )),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        Color(red: 0.55, green: 0.95, blue: 0.88).opacity(selfLight),
+                        .clear,
+                    ]),
+                    center: center,
+                    startRadius: radius * 0.1,
+                    endRadius: haloR
+                )
+            )
+        }
 
         // body: a centre lobe and a ring of lobes, wobbling gently
         var body = Path()
@@ -799,7 +928,7 @@ struct ContentView: View {
         let cirriThreshold = 0.04 + 0.10 * ageSettle
         let plumeBase = tideNow.angle + (Self.fuzz(seed, 55) * 0.5 - 0.25)
         var plumeReach = radius * (0.55 + 0.55 * tideNow.strength)
-            * (0.7 + 0.5 * Self.fuzz(seed, 44)) * (1 - 0.35 * ageSettle)
+            * (0.7 + 0.5 * Self.fuzz(seed, 44)) * (1 - 0.35 * ageSettle) * (0.8 + 0.2 * light)
         var plumeAngle = plumeBase
         var plumeVis = 0.14 + 0.10 * tideNow.strength
         if attention > cirriThreshold {
@@ -808,6 +937,10 @@ struct ContentView: View {
             plumeReach = max(plumeReach, radius * (0.55 + 0.65 * beyond))
             plumeVis = max(plumeVis, 0.32 * beyond + 0.10)
         }
+        // in the water's night the plumes are seen by the colony's
+        // own light, not by the light from above — shorter, and
+        // fainter, the way sleepers reach
+        plumeVis = plumeVis * (0.55 + 0.45 * light) + 0.05 * (1 - light)
         let cirriCount = 6
         for i in 0..<cirriCount {
             let spread = (Double(i) - Double(cirriCount - 1) / 2) * 0.55
@@ -858,22 +991,30 @@ struct ContentView: View {
     /// shell had been, and the pale surface exposed beneath. It holds
     /// for a while, then the water slowly forgets it. Unlike the living,
     /// a trace does not drift — it stays where the creature was.
-    private func drawGhost(_ context: inout GraphicsContext, _ ghost: Ghost, size: CGSize, now: Date) {
+    private func drawGhost(_ context: inout GraphicsContext, _ ghost: Ghost, size: CGSize, now: Date, light: Double, fingerPoint: CGPoint?, presence: Double) {
         let age = now.timeIntervalSince(ghost.departedAt)
         guard age < 150 else { return }
-        // the trace keeps, then dissolves
+        // the trace keeps, then dissolves — and in the water's night
+        // the trace goes dark too, lit only where the hand's light
+        // reaches it, the way a rock is lit by a lamp laid against
+        // it
         let fade = 1 - Self.smoothstep(40, 150, age)
         guard fade > 0.001 else { return }
 
         let center = CGPoint(x: ghost.x * size.width, y: ghost.y * size.height)
         let r = ghost.size
+        var vis = fade * (0.30 + 0.70 * light)
+        if let fp = fingerPoint, presence > 0.001 {
+            let d = hypot(Double(fp.x) - center.x, Double(fp.y) - center.y)
+            vis += presence * (1 - light) * (1 - Self.smoothstep(40, 170, d)) * 0.35
+        }
 
         // the exposed surface: pale where the body had been
         context.fill(
             Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)),
             with: .radialGradient(
                 Gradient(colors: [
-                    Color(red: 0.84, green: 0.82, blue: 0.74).opacity(0.11 * fade),
+                    Color(red: 0.84, green: 0.82, blue: 0.74).opacity(0.11 * vis),
                     .clear,
                 ]),
                 center: center,
@@ -892,7 +1033,7 @@ struct ContentView: View {
         ))
         context.stroke(
             ring,
-            with: .color(Color(red: 0.88, green: 0.85, blue: 0.76).opacity(0.16 * fade)),
+            with: .color(Color(red: 0.88, green: 0.85, blue: 0.76).opacity(0.16 * vis)),
             lineWidth: 1.5
         )
     }

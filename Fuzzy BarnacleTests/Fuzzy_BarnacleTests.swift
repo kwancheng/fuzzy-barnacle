@@ -34,4 +34,30 @@ struct Fuzzy_BarnacleTests {
         #expect(offset.dx == 0 && offset.dy == 0, "with the hand gone, the scatter is gone with it")
     }
 
+    // The water's own day: the light from the surface dims and
+    // brightens again on the water's clock — never pitch black, and
+    // always turning. In the night a moving hand stirs the colony's
+    // self-light, and the stirring fades.
+
+    @Test func theWaterHasADayAndANight() {
+        var lo = 1.0
+        var hi = 0.0
+        for i in 0..<5760 {
+            let v = ContentView.daylight(Double(i) * 0.25)
+            lo = min(lo, v)
+            hi = max(hi, v)
+        }
+        #expect(lo >= 0.02, "the water's night is never pitch black")
+        #expect(hi <= 1.0)
+        #expect(hi - lo > 0.8, "the water's light actually turns")
+    }
+
+    @Test func theStirringLingersThenFades() {
+        let stirred = ContentView.handFlashEnvelope(speed: 400, age: 0, light: 0)
+        #expect(stirred > 0.9, "a fast hand in the dark water is light")
+        let after = ContentView.handFlashEnvelope(speed: 400, age: 3, light: 0)
+        #expect(after < stirred * 0.15, "the stirred light fades within three seconds")
+        #expect(ContentView.handFlashEnvelope(speed: 400, age: 0, light: 1) == 0, "in full daylight the stirring is not seen")
+    }
+
 }
