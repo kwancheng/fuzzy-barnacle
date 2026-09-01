@@ -19,7 +19,10 @@ import SwiftData
 /// the water: the current surges, the rain falls, the light from
 /// above dims under the cloud, the colony tucks in, and the quick
 /// ones ride it — and when the storm passes, the water is the water
-/// again, and does not remember it.
+/// again, and does not remember it. And a hand moving through the
+/// dark stirs the water's own small light along its path, the way
+/// the sea sparkles where a wave breaks — and the water forgets
+/// that light, the way it forgets everything.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -42,6 +45,11 @@ struct ContentView: View {
     @State private var handSpeedAt: Date = .distantPast
     @State private var lastMoveAt: Date?
 
+    // the wake: the light a moving hand makes in the water itself,
+    // the way the sea sparkles where a wave breaks — kept only so
+    // long as the light lasts, and no longer
+    @State private var handTrail: [WakeSample] = []
+
     struct Ripple: Identifiable {
         let id: Int
         let unitPoint: CGPoint
@@ -52,6 +60,15 @@ struct ContentView: View {
             case settle
             case pryOff
         }
+    }
+
+    /// One point of the hand's recent path, with the speed the hand
+    /// had there: the material the wake is made of. Nothing else is
+    /// kept — the water keeps the light only while it lasts.
+    struct WakeSample {
+        let point: CGPoint
+        let time: Date
+        let speed: Double
     }
 
     var body: some View {
@@ -103,6 +120,10 @@ struct ContentView: View {
                         ? Self.handFlashEnvelope(speed: handSpeed, age: now.timeIntervalSince(handSpeedAt), light: light)
                         : 0
                     drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow)
+                    // the wake: the water's own small light, stirred
+                    // along the hand's path, drawn in the water and
+                    // under everything the water carries
+                    drawWake(&context, now: now, light: light, storm: stormNow)
                     drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow)
                     drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow)
                     for ghost in ghosts {
@@ -149,6 +170,25 @@ struct ContentView: View {
                 }
                 lastMoveAt = now
                 fingerPoint = value.location
+                // the wake: a moving hand stirs the water's own small
+                // light along its path, and the water forgets the
+                // light, the way it forgets the hand
+                if handSpeed > 25 {
+                    handTrail.removeAll { now.timeIntervalSince($0.time) > Self.wakeLife }
+                    if let last = handTrail.last {
+                        let dt = now.timeIntervalSince(last.time)
+                        let dx = value.location.x - last.point.x
+                        let dy = value.location.y - last.point.y
+                        if dt >= 0.033 || hypot(dx, dy) > 6 {
+                            handTrail.append(WakeSample(point: value.location, time: now, speed: handSpeed))
+                            if handTrail.count > 80 {
+                                handTrail.removeFirst(handTrail.count - 80)
+                            }
+                        }
+                    } else {
+                        handTrail.append(WakeSample(point: value.location, time: now, speed: handSpeed))
+                    }
+                }
             }
             .onEnded { value in
                 defer { pressStart = nil }
@@ -637,6 +677,36 @@ struct ContentView: View {
         return nil
     }
 
+    // MARK: - The Wake
+
+    /// How long the wake holds before the water forgets it. It is a
+    /// moment — quick to come, slow to go — and no longer.
+    static let wakeLife: Double = 1.6
+
+    /// The light a moving hand makes in the water itself: the way the
+    /// sea sparkles where a wave breaks. It is the water's own small
+    /// light, stirred along the hand's path — not the light from
+    /// above, and not the colony's glow — and it shows where the
+    /// light from above is gone. A still hand makes no wake at all: a
+    /// still hand is a lamp, and a moving hand is a maker of light.
+    static func wakeStrength(speed: Double, light: Double, storm: Double) -> Double {
+        // the stirring: a still hand makes none, a fast hand makes much
+        let stirred = min(1, speed / 450)
+        // the water's small light shows where the light from above is
+        // gone: faint in the full day, strong in the night
+        let dark = 1 - light
+        // the storm's cloud is a going-out of the light, and the wake
+        // shows under it, the way everything the water makes shows
+        return stirred * (0.05 + 0.22 * dark) * (1 + 0.5 * storm)
+    }
+
+    /// The wake lingers a moment after the hand, and then the water
+    /// forgets it — the way it forgets the hand, and the storm, and
+    /// everything.
+    static func wakeFade(age: Double) -> Double {
+        return 1 - smoothstep(0.12, Self.wakeLife, age)
+    }
+
     // MARK: - Virtual Time
 
     /// The piece's own clock can be shifted, for testing and for
@@ -740,6 +810,38 @@ struct ContentView: View {
                 endRadius: radius
             )
         )
+    }
+
+    /// The wake: the light a moving hand makes in the water itself,
+    /// drawn from the hand's recent path — the water's own small
+    /// light, stirred, and gone, and forgotten, the way the water
+    /// forgets.
+    private func drawWake(_ context: inout GraphicsContext, now: Date, light: Double, storm: Double) {
+        for sample in handTrail {
+            let age = now.timeIntervalSince(sample.time)
+            let fade = Self.wakeFade(age: age)
+            guard fade > 0.004 else { continue }
+            let strength = Self.wakeStrength(speed: sample.speed, light: light, storm: storm)
+            guard strength > 0.004 else { continue }
+            let radius = 24.0
+            context.fill(
+                Path(ellipseIn: CGRect(
+                    x: sample.point.x - radius,
+                    y: sample.point.y - radius,
+                    width: radius * 2,
+                    height: radius * 2
+                )),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        Color(red: 0.62, green: 0.96, blue: 0.95).opacity(strength * fade),
+                        .clear,
+                    ]),
+                    center: sample.point,
+                    startRadius: 0,
+                    endRadius: radius
+                )
+            )
+        }
     }
 
     private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double) {

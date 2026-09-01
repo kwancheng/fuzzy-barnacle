@@ -164,4 +164,36 @@ struct Fuzzy_BarnacleTests {
         #expect(ContentView.drawnLight(now + calmAt - now) == ContentView.daylight(now + calmAt - now), "and there the water is unchanged")
     }
 
+    // The wake: a moving hand stirs the water's own small light
+    // along its path, the way the sea sparkles where a wave breaks.
+    // A still hand makes none — a still hand is a lamp. It shows
+    // where the light from above is gone, and the water forgets it.
+
+    @Test func theMovingHandMakesAWake() {
+        let nightFast = ContentView.wakeStrength(speed: 450, light: 0, storm: 0)
+        let dayFast = ContentView.wakeStrength(speed: 450, light: 1, storm: 0)
+        let still = ContentView.wakeStrength(speed: 0, light: 0, storm: 0)
+        #expect(nightFast > dayFast, "the wake shows where the light from above is gone")
+        #expect(dayFast > 0, "in the day the wake is faint, not gone")
+        #expect(still == 0, "a still hand makes no wake — a still hand is a lamp")
+    }
+
+    @Test func theWakeShowsUnderTheCloud() {
+        // the storm's cloud is a going-out of the light, and the
+        // water's small light shows under it, the way it shows in
+        // the night
+        let calmNight = ContentView.wakeStrength(speed: 450, light: 0, storm: 0)
+        let stormNight = ContentView.wakeStrength(speed: 450, light: 0, storm: 1)
+        #expect(stormNight > calmNight, "the wake is brighter under the storm's cloud")
+    }
+
+    @Test func theWakeLingersThenTheWaterForgets() {
+        let fresh = ContentView.wakeFade(age: 0)
+        #expect(fresh == 1, "a just-made wake is at its full")
+        let later = ContentView.wakeFade(age: 3)
+        #expect(later == 0, "the water forgets the wake within three seconds")
+        let mid = ContentView.wakeFade(age: 0.8)
+        #expect(mid > 0 && mid < 1, "the wake lingers a moment, then fades")
+    }
+
 }

@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **The colony**: barnacles settle on a tap (persisted as `Barnacle` in SwiftData), accrete to adult size, and age. Holding one prys it off, leaving a `Ghost` — a trace that holds, then dissolves and is pruned.
 - **The passing**: five "drifters" ride the current and never settle (`drifterRawPosition` — deterministic from the water's clock, stored nowhere).
 - **The storm**: rare weather — two incommensurate currents must align while a slow season is willing (`ContentView.storm`); then the current surges, rain falls, the light dims under the cloud, the colony tucks in, and when it passes the water does not remember it.
-- **The hand**: the press gesture parts the water, scatters the quick ones, and in the night / storm reads as a lamp.
+- **The hand**: the press gesture parts the water, scatters the quick ones, and in the night / storm reads as a lamp. A *moving* hand also makes the water's own small light along its path — the **wake** (`ContentView.wakeStrength`/`wakeFade`, a brief ribbon that shows where the light from above is gone, brightest in the night and under the storm's cloud) — which the water forgets, the way it forgets everything. A still hand is only the lamp.
 
 `README.md` is the latest entry of a trail, written in the artist's first-person voice, with screenshots in `screenshots/`; earlier entries are kept in `readme-archive/`. Every README page (live and archived) opens with the verbatim installation-statement block — keep it when archiving.
 
