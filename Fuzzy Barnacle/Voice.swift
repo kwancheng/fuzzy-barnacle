@@ -14,7 +14,11 @@ import os.log
 /// the closing is a granular voice, made of the colony itself:
 /// sparse at the storm's stirring, a bed of closings at the
 /// storm's full, and quiet where there is no storm, the way the
-/// slack water is quiet.
+/// slack water is quiet. And where the moon's light lies on the
+/// moving water, the water glints: small and high and sparse, the
+/// way a glint is — the sky's voice on the water, and when the
+/// crossing passes, the sky is silent again, the way the sky is
+/// silent most of the time.
 ///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
@@ -38,6 +42,7 @@ final class WaterVoice: ObservableObject {
     private var murmurTarget: Double = 0
     private var rainTarget: Double = 0
     private var tuckTarget: Double = 0
+    private var glintTarget: Double = 0
     private var swishTarget: Double = 0
     private var cutoffTarget: Double = 500
 
@@ -68,6 +73,22 @@ final class WaterVoice: ObservableObject {
     private var clickers: [Clicker] = []
     private var tuckGain: Double = 0
 
+    // The sky's glint: six grains of the water's own light, each
+    // glinting when it glints, at its own pace and its own pitch,
+    // the way no two glints are the same. The glint is a moment of
+    // light — a grain of the moon's light on the moving water,
+    // gone in a moment.
+    private struct Glinter {
+        var baseFreq: Double
+        var freq: Double
+        var phase: Double
+        var env: Double
+        var nextIn: Int
+        var weight: Double
+    }
+    private var glinters: [Glinter] = []
+    private var glintGain: Double = 0
+
     /// The voice's own draw: a unit random, the way the water draws
     /// its motes
     @inline(__always)
@@ -97,6 +118,20 @@ final class WaterVoice: ObservableObject {
                 env: 0,
                 nextIn: Int(drawRng() * 44_100),
                 weight: 0.8 + 0.4 * drawRng()
+            ))
+        }
+        // the sky's glint: six grains, higher and shorter than the
+        // colony's closings — a glint of light, not a closing of a
+        // shell
+        for _ in 0..<6 {
+            let f = drawRng()
+            glinters.append(Glinter(
+                baseFreq: 2600 + 2600 * f,
+                freq: 2600 + 2600 * f,
+                phase: 0,
+                env: 0,
+                nextIn: Int(drawRng() * 44_100),
+                weight: 0.7 + 0.3 * drawRng()
             ))
         }
     }
@@ -183,28 +218,30 @@ final class WaterVoice: ObservableObject {
     /// The piece tells the voice what it is doing: how fast the
     /// current is turning (the murmur), how much storm is over the
     /// water (the rain), the closing of the colony's shells where
-    /// the storm tucks the colony in (the tuck), the swish where
+    /// the storm tucks the colony in (the tuck), the glint where
+    /// the moon's light lies on the moving water, the swish where
     /// the hand has been (the water's answer, heard), and how low
     /// the voice should sit (lower, in the water's night). The
     /// voice eases toward each of them, the way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, swish: Double, cutoff: Double) {
+    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
         tuckTarget = tuck
+        glintTarget = glint
         swishTarget = swish
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + tuck + swish > 0.03
+        let isSpeaking = murmur + rain + tuck + glint + swish > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, swish: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, swishTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, glintTarget, swishTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -222,9 +259,16 @@ final class WaterVoice: ObservableObject {
         // storm, the way the slack water is still
         let tuckDensity = min(1, target.tuck / 0.06)
         let tuckMean = 0.08 + 2.9 * pow(1 - tuckDensity, 3)
+        // the sky's glint: the glints come and thicken with the
+        // moon — sparse and far where the moon is low, a bed of
+        // glints where it is high — and still where the moon is
+        // not, the way the sky is still most of the time
+        let glintDensity = min(1, target.glint / 0.03)
+        let glintMean = 0.5 + 2.5 * pow(1 - glintDensity, 3)
 
         var sum: Double = 0
         var tuckSum: Double = 0
+        var glintSum: Double = 0
         for frame in 0..<Int(frameCount) {
             // the water's own noise: a draw of white, remembered
             // into brown
@@ -263,17 +307,40 @@ final class WaterVoice: ObservableObject {
                 tuckSum += sin(c.phase) * c.env * c.weight
                 clickers[ci] = c
             }
+            // the sky's glint: each grain glints when it glints, at
+            // its own pace and its own pitch — a moment of light,
+            // gone in a moment
+            for gi in glinters.indices {
+                var g = glinters[gi]
+                g.nextIn -= 1
+                if g.nextIn <= 0 {
+                    g.env = 1
+                    g.phase = 0
+                    let jitter = 0.5 + drawRng()
+                    g.nextIn = max(220, Int(Double(format.sampleRate) * glintMean * jitter))
+                    // each glint is slightly off the last, the way
+                    // no two glints are the same
+                    g.freq = g.baseFreq * (0.9 + 0.2 * drawRng())
+                }
+                g.phase += 2 * .pi * g.freq / Double(format.sampleRate)
+                if g.phase >= 4 * .pi { g.phase -= 4 * .pi }
+                g.env *= 0.988
+                glintSum += sin(g.phase) * g.env * g.weight
+                glinters[gi] = g
+            }
             // the voice eases toward what the water is doing, the
             // way water eases: the murmur slowly, the rain at the
-            // storm's pace, the colony tucks in slowly, and the
-            // swish at the hand's
+            // storm's pace, the colony tucks in slowly, the sky
+            // glints slowly, and the swish at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
             tuckGain += (target.tuck - tuckGain) * 0.004
+            glintGain += (target.glint - glintGain) * 0.004
             swishGain += (target.swish - swishGain) * 0.05
             var out = murmurLow * murmurGain * 2.4
                 + rainHiss * rainGain * 1.2
                 + tuckSum * tuckGain * 1.2
+                + glintSum * glintGain * 1.2
                 + swishHiss * swishGain
             // a soft edge, the way the water has soft edges
             out = tanh(out * 1.4) / tanh(1.4)
@@ -284,7 +351,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f)", level, tuckGain)
+            os_log("fb voice: level %f (tuck %f, glint %f)", level, tuckGain, glintGain)
         }
     }
 }

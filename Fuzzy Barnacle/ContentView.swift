@@ -31,7 +31,13 @@ import SwiftData
 /// closes its shells, there is a granular voice, made of the
 /// colony itself — sparse and far at the storm's stirring, a bed
 /// of closings at its full — and where there is no storm the
-/// colony is quiet, the way the slack water is quiet.
+/// colony is quiet, the way the slack water is quiet. And,
+/// rarely, in the night, the moon crosses the water: a broad
+/// beam of the sky's cold light, drifting across it, the colony
+/// lit by the sky for a while, the motes catching the beam, the
+/// moving water glinting under it, the way the sea glints under
+/// the moon — and when the crossing passes, the water does not
+/// remember it, the way it does not remember the storm.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -124,7 +130,8 @@ struct ContentView: View {
     /// One telling of the voice: how fast the current is turning
     /// (the murmur), how much storm is over the water (the rain),
     /// the closing of the colony's shells where the storm tucks the
-    /// colony in (the tuck), the swish where the hand has been, and
+    /// colony in (the tuck), the glint where the moon's light lies
+    /// on the moving water, the swish where the hand has been, and
     /// how low the voice sits, which is lower in the water's night.
     /// The swish runs on the world's time, the way the hand's other
     /// answers do — it is the hand the water knows, not the clock
@@ -135,6 +142,7 @@ struct ContentView: View {
         let t = vnow.timeIntervalSinceReferenceDate
         let light = Self.drawnLight(t)
         let stormNow = Self.storm(t)
+        let moonNow = Self.moonDrawn(t)
         voice.update(
             murmur: Self.murmurGain(
                 strengthNow: Self.tide(t).strength,
@@ -142,6 +150,7 @@ struct ContentView: View {
             ),
             rain: Self.rainGain(storm: stormNow, light: light),
             tuck: Self.tuckGain(storm: stormNow),
+            glint: Self.glintGain(moon: moonNow, current: Self.tide(t).strength),
             swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
             cutoff: 240 + 660 * (0.3 + 0.7 * light)
         )
@@ -167,21 +176,23 @@ struct ContentView: View {
                     let presence = fingerPresence(now: now)
                     let stormNow = Self.storm(t)
                     let light = Self.drawnLight(t)
+                    let moonNow = Self.moonDrawn(t)
+                    let moonBeamX = Self.moonBeamX(t, width: size.width)
                     let handFlash = presence > 0.001 && handSpeed > 1
                         ? Self.handFlashEnvelope(speed: handSpeed, age: now.timeIntervalSince(handSpeedAt), light: light)
                         : 0
-                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow)
+                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX)
                     // the wake: the water's own small light, stirred
                     // along the hand's path, drawn in the water and
                     // under everything the water carries
                     drawWake(&context, now: now, light: light, storm: stormNow)
                     drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow)
-                    drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow)
+                    drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX)
                     for ghost in ghosts {
-                        drawGhost(&context, ghost, size: size, now: vnow, light: light, storm: stormNow, fingerPoint: fingerPoint, presence: presence)
+                        drawGhost(&context, ghost, size: size, now: vnow, light: light, storm: stormNow, fingerPoint: fingerPoint, presence: presence, moon: moonNow, moonBeamX: moonBeamX)
                     }
                     for barnacle in barnacles {
-                        drawBarnacle(&context, barnacle, size: size, now: vnow, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow)
+                        drawBarnacle(&context, barnacle, size: size, now: vnow, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX)
                     }
                     for ripple in ripples {
                         drawRipple(&context, ripple, size: size, now: now)
@@ -346,6 +357,11 @@ struct ContentView: View {
                 }
                 if let stormLine = stormLine(for: vnow) {
                     Text(stormLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+                if let moonLine = moonLine(for: vnow) {
+                    Text(moonLine)
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
@@ -523,13 +539,13 @@ struct ContentView: View {
     /// turns late, the way a small body turns late in moving water.
     private static let drifterRideLag: Double = 90
 
-    private func drawPassing(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double) {
+    private func drawPassing(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double, moon: Double, moonBeamX: Double) {
         for i in 0..<Self.drifterCount {
-            drawDrifter(&context, index: i, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: storm)
+            drawDrifter(&context, index: i, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: storm, moon: moon, moonBeamX: moonBeamX)
         }
     }
 
-    private func drawDrifter(_ context: inout GraphicsContext, index: Int, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double) {
+    private func drawDrifter(_ context: inout GraphicsContext, index: Int, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double, moon: Double, moonBeamX: Double) {
         // 0x50415353 is "PASS" in hex: the ones who pass through
         let seed = 0x50415353
 
@@ -578,6 +594,15 @@ struct ContentView: View {
         if handFlash > 0.001, let fp = fingerPoint {
             let d = hypot(Double(fp.x) - position.x, Double(fp.y) - position.y)
             glow += 0.10 * handFlash * (1 - Self.smoothstep(60, 200, d))
+        }
+        // the moon's light lays on the passing too — the quick ones
+        // do not care which light sees them
+        if moon > 0.02 {
+            glow += 0.10 * moon * Self.moonBeamFall(
+                x: Double(position.x),
+                beamX: moonBeamX,
+                sigma: Self.moonBeamSigma(width: size.width)
+            )
         }
         bodyContext.fill(
             Path(ellipseIn: CGRect(x: -bodyLength * 2.4, y: -bodyLength * 2.4, width: bodyLength * 4.8, height: bodyLength * 4.8)),
@@ -758,6 +783,79 @@ struct ContentView: View {
         return nil
     }
 
+    // MARK: - The Moon
+
+    /// The sky's own slow word. The storm is what the sky remembers
+    /// of the water; the moon is what the sky says to it. It comes
+    /// rarely — the way the storm comes, only rarer: two
+    /// incommensurate currents must turn to face the same way at
+    /// once, and the sky must be clear for it, and the clearing
+    /// turns on a calendar slower than the storm's season — and it
+    /// keeps to the night, the way the moon keeps to the night: in
+    /// the day the sky is too bright, and the crossing passes
+    /// unseen. While it is over the water, a broad beam of the
+    /// sky's cold light drifts across it — the one light in the
+    /// piece that moves across the water instead of over it — the
+    /// colony is lit by the sky for a while, the motes catch the
+    /// beam, the moving water glints under it, the way the sea
+    /// glints under the moon. And when the crossing passes, the
+    /// water is the water again, and does not remember it.
+    static func moon(_ t: Double) -> Double {
+        // the alignment: two incommensurate currents must turn to
+        // face the same way at once, the way the storm's do
+        let a = sin(t * 2 * .pi / 1723 + 0.9)
+        let b = sin(t * 2 * .pi / 791 + 2.2)
+        let alignment = a * b * 0.5 + 0.5
+        // the clearing: the sky is clear for the moon only part of
+        // the time, and what it is, it is slowly — slower still
+        // than the storm's season
+        let clearness = 0.5 + 0.5 * sin(t * 2 * .pi / 4871 + 0.5)
+        return smoothstep(0.80, 0.97, alignment) * pow(clearness, 2)
+    }
+
+    /// The moon as the water sees it: the crossing, in the night.
+    /// In the day the sky is too bright, and the water does not
+    /// see the moon at all.
+    static func moonDrawn(_ t: Double) -> Double {
+        return moon(t) * (1 - daylight(t))
+    }
+
+    /// Where the moon's beam is: the crossing is a drifting — the
+    /// beam moves across the water, slowly, the way the moon's
+    /// light moves across the sea. The sky is patient.
+    static func moonBeamX(_ t: Double, width: Double) -> Double {
+        return width * (0.5 + 0.78 * sin(t * 2 * .pi / 887 + 1.7))
+    }
+
+    /// The beam's soft width: the moon's light is a broad one, the
+    /// way the moon's light on the sea is broad.
+    static func moonBeamSigma(width: Double) -> Double {
+        return 0.16 * width
+    }
+
+    /// How much of the moon's light lies on a point of the water:
+    /// most where the beam is, and a little way from it, none far
+    /// from it.
+    static func moonBeamFall(x: Double, beamX: Double, sigma: Double) -> Double {
+        let d = (x - beamX) / sigma
+        return exp(-d * d / 2)
+    }
+
+    /// The sky's own slow word, as the caption keeps it: the moon
+    /// crosses rarely, and keeps to the night, and while it is over
+    /// the water the caption says so, the way the caption keeps the
+    /// storm.
+    private func moonLine(for now: Date) -> String? {
+        let m = Self.moonDrawn(now.timeIntervalSinceReferenceDate)
+        if m > 0.5 {
+            return "the moon crosses the water"
+        }
+        if m > 0.15 {
+            return "the moon is over the water"
+        }
+        return nil
+    }
+
     // MARK: - The Wake
 
     /// How long the wake holds before the water forgets it. It is a
@@ -805,7 +903,11 @@ struct ContentView: View {
     /// the storm's full — and where there is no storm the colony is
     /// quiet, the way the slack water is quiet. The colony's voice
     /// is the storm's, not the colony's: the colony speaks only
-    /// when the water is angry.
+    /// when the water is angry. And where the moon's light lies on
+    /// the moving water, the water glints — small and high and
+    /// sparse, the way a glint is: the sky's voice on the water,
+    /// heard, and gone, and forgotten, the way the sky forgets
+    /// everything.
 
     /// How much of the water's low voice is up at a moment: the
     /// voice is the *turning* of the current — the change of the
@@ -849,6 +951,22 @@ struct ContentView: View {
     /// and the water does not remember it.
     static func tuckGain(storm: Double) -> Double {
         return 0.06 * storm
+    }
+
+    /// The sky's own voice on the water: where the moon's light
+    /// lies, the moving water glints — small and high and sparse,
+    /// the way a glint is. The glint is the sky's light on the
+    /// water's *motion*: the still water glints less, the moving
+    /// water glints more — the moon does not make the sparkle, it
+    /// makes it visible. Where the moon is not, the sky is silent,
+    /// the way the sky is silent most of the time, and when the
+    /// crossing passes, the glint is gone the way the crossing is
+    /// gone, and the water does not remember it.
+    static func glintGain(moon: Double, current: Double) -> Double {
+        // the glint is light on motion: the tide's strength, which
+        // the water measures the way it measures anything
+        let motion = min(1, max(0, (current - 0.3) / 0.7))
+        return 0.03 * moon * (0.30 + 0.70 * motion)
     }
 
     // MARK: - Virtual Time
@@ -988,7 +1106,7 @@ struct ContentView: View {
         }
     }
 
-    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double) {
+    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double, moon: Double, moonBeamX: Double) {
         let rect = CGRect(origin: .zero, size: size)
 
         // the depth: darker in the water's night, the way the sea
@@ -1037,6 +1155,29 @@ struct ContentView: View {
                     Gradient(colors: [Color.white.opacity(0.05 * (0.12 + 0.88 * light)), .clear]),
                     startPoint: .zero,
                     endPoint: CGPoint(x: 0, y: shaftRect.height)
+                )
+            )
+        }
+
+        // the moon's beam: the sky's cold light, drifting across the
+        // water — a broad one, the way the moon's light on the sea
+        // is broad. While it is here, the water is lit by the sky;
+        // when it passes, the water does not remember it
+        if moon > 0.02 {
+            let sigma = Self.moonBeamSigma(width: size.width)
+            let beamColor = Color(red: 0.78, green: 0.86, blue: 1.0)
+            context.fill(
+                Path(rect),
+                with: .linearGradient(
+                    Gradient(stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: beamColor.opacity(0.08 * moon * 0.88), location: 0.25),
+                        .init(color: beamColor.opacity(0.08 * moon), location: 0.5),
+                        .init(color: beamColor.opacity(0.08 * moon * 0.33), location: 0.75),
+                        .init(color: beamColor.opacity(0.08 * moon * 0.14), location: 1),
+                    ]),
+                    startPoint: CGPoint(x: moonBeamX - 2 * sigma, y: 0),
+                    endPoint: CGPoint(x: moonBeamX + 2 * sigma, y: 0)
                 )
             )
         }
@@ -1109,7 +1250,7 @@ struct ContentView: View {
         }
     }
 
-    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double) {
+    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double, moon: Double, moonBeamX: Double) {
         let seed = barnacle.seed
 
         // settling: born at its timestamp, eases in with a small overshoot
@@ -1175,6 +1316,16 @@ struct ContentView: View {
         let radius = grown * settleScale * breath
         guard radius > 0.5 else { return }
 
+        // the moon: while the crossing is over this water, the
+        // creature is lit by the sky's cold light — the sky's
+        // light over its own — the way a creature on the shore is
+        // lit by the moon over the sea
+        let moonLocal = moon * Self.moonBeamFall(
+            x: Double(center.x),
+            beamX: moonBeamX,
+            sigma: Self.moonBeamSigma(width: size.width)
+        )
+
         let shell = shellColor(seed: seed)
         let plate = plateColor(seed: seed)
         // with age the colour drains toward the rock it is becoming
@@ -1216,6 +1367,30 @@ struct ContentView: View {
                 with: .radialGradient(
                     Gradient(colors: [
                         Color(red: 0.55, green: 0.95, blue: 0.88).opacity(selfLight),
+                        .clear,
+                    ]),
+                    center: center,
+                    startRadius: radius * 0.1,
+                    endRadius: haloR
+                )
+            )
+        }
+
+        // the moon's light: while the crossing is over this water
+        // the creature is lit by the sky, over its own light — and
+        // when the crossing passes, the sky does not remember the
+        // creature, the way the water does not remember the sky
+        if moonLocal > 0.02 {
+            context.fill(
+                Path(ellipseIn: CGRect(
+                    x: center.x - haloR,
+                    y: center.y - haloR,
+                    width: haloR * 2,
+                    height: haloR * 2
+                )),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        Color(red: 0.78, green: 0.86, blue: 1.0).opacity(0.10 * moonLocal),
                         .clear,
                     ]),
                     center: center,
@@ -1313,6 +1488,10 @@ struct ContentView: View {
         var plumeReach = radius * (0.55 + 0.55 * tideNow.strength)
             * (0.7 + 0.5 * Self.fuzz(seed, 44)) * (1 - 0.35 * ageSettle) * (0.8 + 0.2 * light)
             * (1 - 0.45 * storm)
+            // the moonlit colony reaches: lit by the sky for a
+            // while, the plumes reach into the passing light, the
+            // way the colony reaches into anything that feeds it
+            * (1 + 0.35 * moonLocal)
         var plumeAngle = plumeBase
         var plumeVis = 0.14 + 0.10 * tideNow.strength
         if attention > cirriThreshold {
@@ -1375,7 +1554,7 @@ struct ContentView: View {
     /// shell had been, and the pale surface exposed beneath. It holds
     /// for a while, then the water slowly forgets it. Unlike the living,
     /// a trace does not drift — it stays where the creature was.
-    private func drawGhost(_ context: inout GraphicsContext, _ ghost: Ghost, size: CGSize, now: Date, light: Double, storm: Double, fingerPoint: CGPoint?, presence: Double) {
+    private func drawGhost(_ context: inout GraphicsContext, _ ghost: Ghost, size: CGSize, now: Date, light: Double, storm: Double, fingerPoint: CGPoint?, presence: Double, moon: Double, moonBeamX: Double) {
         let age = now.timeIntervalSince(ghost.departedAt)
         guard age < 150 else { return }
         // the trace keeps, then dissolves — and in the water's night
@@ -1392,6 +1571,16 @@ struct ContentView: View {
         if let fp = fingerPoint, presence > 0.001 {
             let d = hypot(Double(fp.x) - center.x, Double(fp.y) - center.y)
             vis += presence * (1 - light) * (1 - Self.smoothstep(40, 170, d)) * 0.35
+        }
+        // the moon lays its light on the trace, the way the hand's
+        // lamp does — the sky sees the water's keeping, and when the
+        // moon passes, it does not remember seeing it
+        if moon > 0.02 {
+            vis += 0.30 * moon * Self.moonBeamFall(
+                x: Double(center.x),
+                beamX: moonBeamX,
+                sigma: Self.moonBeamSigma(width: size.width)
+            )
         }
 
         // the exposed surface: pale where the body had been

@@ -283,4 +283,81 @@ struct Fuzzy_BarnacleTests {
         #expect(hi > 0.05, "a full tuck does come, with a full storm")
     }
 
+    // The moon: the sky's own slow word. It crosses rarely — the
+    // way the storm comes, only rarer — and keeps to the night: in
+    // the day the sky is too bright, and the crossing passes
+    // unseen. While it is over the water, its beam of light drifts
+    // across it, and the moving water glints under it; where the
+    // moon is not, the sky is silent.
+
+    @Test func theMoonKeepsToTheNight() {
+        // forty-eight hours of the water's clock: wherever the moon
+        // is seen, it is seen in the night, and the night only
+        // takes the moon's light, never gives it
+        for i in stride(from: 0, to: 172_800, by: 2) {
+            let t = Double(i)
+            let drawn = ContentView.moonDrawn(t)
+            #expect(drawn <= ContentView.moon(t) + 0.000_001, "the night only takes the moon's light, never gives")
+            if drawn > 0.8 {
+                #expect(ContentView.daylight(t) < 0.2, "a crossing seen at its full is a night crossing")
+            }
+        }
+    }
+
+    @Test func aCrossingDoesCome() {
+        // within two days the alignment and the clear sky and the
+        // night do meet, and a crossing runs near to its full —
+        // and the crossings are rare: the moon is a guest, not a
+        // weather
+        var hi = 0.0
+        var windows = 0
+        var inWindow = false
+        for i in 0..<172_800 {
+            let m = ContentView.moonDrawn(Double(i))
+            if m > hi { hi = m }
+            if m > 0.3 {
+                if !inWindow {
+                    windows += 1
+                    inWindow = true
+                }
+            } else {
+                inWindow = false
+            }
+        }
+        #expect(hi > 0.8, "a crossing near to its full does come")
+        #expect(windows >= 5 && windows <= 40, "the crossings come, and the crossings are rare")
+    }
+
+    @Test func theMoonsLightDriftsAcrossTheWater() {
+        // while the moon is over the water, its beam moves: the
+        // crossing is a drifting, not a standing — the one light
+        // in the piece that moves across the water instead of over
+        // it
+        var lo = Double.greatestFiniteMagnitude
+        var hi = -Double.greatestFiniteMagnitude
+        var seen = 0
+        for i in 0..<172_800 {
+            if ContentView.moonDrawn(Double(i)) > 0.5 {
+                let x = ContentView.moonBeamX(Double(i), width: 430)
+                lo = min(lo, x)
+                hi = max(hi, x)
+                seen += 1
+            }
+        }
+        #expect(seen > 0, "the moon is seen sometimes")
+        #expect(hi - lo > 200, "the moon's light drifts across the water while it is here")
+    }
+
+    @Test func theSkyIsSilentWhereTheMoonIsNot() {
+        #expect(ContentView.glintGain(moon: 0, current: 1) == 0, "where the moon is not, the sky is silent")
+        #expect(
+            ContentView.glintGain(moon: 1, current: 1) > ContentView.glintGain(moon: 1, current: 0.3),
+            "the moving water glints more than the still water"
+        )
+        #expect(
+            ContentView.glintGain(moon: 1, current: 1) < ContentView.rainGain(storm: 1, light: 1),
+            "the guest's voice is quieter than the weather's"
+        )
+    }
+
 }
