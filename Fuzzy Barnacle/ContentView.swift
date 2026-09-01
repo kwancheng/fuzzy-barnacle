@@ -7,7 +7,10 @@ import SwiftData
 /// they slow with age, and where one has let go, a trace remains a
 /// while before the water forgets it. And the water moves: a tide
 /// runs through it, carrying the motes and the plumes, and it parts
-/// around a hand, the way water goes around a rock.
+/// around a hand, the way water goes around a rock. And the quick
+/// ones pass through: small lives that ride the current, scatter from
+/// the hand, and leave no trace at all — the water keeps what stays,
+/// and lets go what passes.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -76,6 +79,7 @@ struct ContentView: View {
                     let presence = fingerPresence(now: now)
                     drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
                     drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence)
+                    drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
                     for ghost in ghosts {
                         drawGhost(&context, ghost, size: size, now: now)
                     }
@@ -298,9 +302,181 @@ struct ContentView: View {
     }
 
     @inline(__always)
-    private func blendAngle(_ a: Double, _ b: Double, _ w: Double) -> Double {
+    private static func blendAngle(_ a: Double, _ b: Double, _ w: Double) -> Double {
         let d = atan2(sin(b - a), cos(b - a))
         return a + d * w
+    }
+
+    // MARK: - The Passing
+
+    /// The quick ones: small lives that ride the current and never
+    /// settle. They are not part of the record — the water keeps what
+    /// stays, and lets go what passes — so they are kept nowhere. Each
+    /// one's whole life is a function of the water's own clock, the
+    /// way the tide and the motes are: it was running before the piece
+    /// was opened, and it will be running after it is closed.
+    ///
+    /// They answer the hand the opposite way the colony does: the
+    /// anchored turn toward it, tasting; the quick ones scatter from
+    /// it. And when the hand is gone they drift back, and the water
+    /// does not remember the hand.
+
+    /// Five, no more: this water is not a school.
+    private static let drifterCount = 5
+
+    /// How far behind its own clock a quick one rides the current: it
+    /// turns late, the way a small body turns late in moving water.
+    private static let drifterRideLag: Double = 90
+
+    private func drawPassing(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double) {
+        for i in 0..<Self.drifterCount {
+            drawDrifter(&context, index: i, size: size, t: t, fingerPoint: fingerPoint, presence: presence)
+        }
+    }
+
+    private func drawDrifter(_ context: inout GraphicsContext, index: Int, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double) {
+        // 0x50415353 is "PASS" in hex: the ones who pass through
+        let seed = 0x50415353
+
+        // its depth: the near ones are larger and brighter, the far
+        // ones are small and dim — and it is the water between the
+        // depths that gives the piece its thickness
+        let depth = 0.45 + 0.55 * Self.fuzz(seed, 10 + index)
+        let scale = 0.55 + 0.75 * depth
+
+        // the current at its lagged clock: the quick ones ride it and
+        // turn late. A half-second back, the same lag.
+        let carry = tideFlow(t - Self.drifterRideLag / 2)
+        let step: Double = 0.6
+        let now = Self.drifterRawPosition(index: index, size: size, t: t, carry: carry, finger: fingerPoint, presence: presence)
+        let late = Self.drifterRawPosition(index: index, size: size, t: t - step, carry: tideFlow(t - step - Self.drifterRideLag / 2), finger: fingerPoint, presence: presence)
+        let vx = (now.x - late.x) / step
+        let vy = (now.y - late.y) / step
+        let position = Self.drifterWrapped(CGPoint(x: now.x, y: now.y), in: size)
+
+
+        // the heading: the filaments stream behind the motion, the way
+        // the plumes stream behind the barnacles — and when its motion
+        // stills, it points into the current, the way the colony does
+        let speed = hypot(vx, vy)
+        let motionAngle = atan2(vy, vx)
+        let heading = Self.blendAngle(tide(t).angle, motionAngle, Self.smoothstep(0.15, 0.9, speed))
+
+        // the taste: when the motion stills it pauses, and the
+        // filaments open
+        let taste = 1 - min(1, speed / 3)
+
+        // the body: a small warm thing, turned to its heading
+        let bodyLength = (2.6 + 1.2 * Self.fuzz(seed, 140 + index)) * scale
+        let bodyWidth = bodyLength * 0.45
+        var bodyContext = context
+        bodyContext.translateBy(x: position.x, y: position.y)
+        bodyContext.rotate(by: .radians(heading))
+
+        // the faint glow: what makes it read as life, and not dust
+        bodyContext.fill(
+            Path(ellipseIn: CGRect(x: -bodyLength * 2.4, y: -bodyLength * 2.4, width: bodyLength * 4.8, height: bodyLength * 4.8)),
+            with: .radialGradient(
+                Gradient(colors: [
+                    Color(red: 0.80, green: 0.92, blue: 0.90).opacity((0.08 + 0.07 * taste) * (0.35 + 0.65 * depth)),
+                    .clear,
+                ]),
+                center: .zero,
+                startRadius: 0,
+                endRadius: bodyLength * 2.4
+            )
+        )
+        bodyContext.fill(
+            Path(ellipseIn: CGRect(x: -bodyLength / 2, y: -bodyWidth / 2, width: bodyLength, height: bodyWidth)),
+            with: .color(Color(red: 0.92, green: 0.97, blue: 0.95).opacity(0.26 + 0.30 * depth))
+        )
+
+        // the filaments: streaming behind, opening as it pauses
+        let filamentCount = 3 + Int(Self.fuzz(seed, 141 + index) * 3)
+        for i in 0..<filamentCount {
+            let fan = (Double(i) - Double(filamentCount - 1) / 2) * (0.20 + 0.30 * taste)
+            let sway = 0.12 * sin(t * 1.3 + 2 * .pi * Self.fuzz(seed, 142 + i) + Double(i) * 1.7)
+            let a = .pi + fan + sway
+            let length = (5 + 7 * Self.fuzz(seed, 150 + i)) * scale * (0.8 + 0.4 * taste)
+            let curve: Double = (Self.fuzz(seed, 160 + i) > 0.5 ? 1 : -1) * 0.18
+            let start = CGPoint(x: -bodyLength * 0.45, y: 0)
+            let end = CGPoint(x: start.x + cos(a) * length, y: start.y + sin(a) * length)
+            let midX = (start.x + end.x) / 2
+            let midY = (start.y + end.y) / 2
+            let ctrl = CGPoint(x: midX - sin(a) * length * curve, y: midY + cos(a) * length * curve)
+            var filament = Path()
+            filament.move(to: start)
+            filament.addQuadCurve(to: end, control: ctrl)
+            bodyContext.stroke(
+                filament,
+                with: .color(Color(red: 0.85, green: 0.93, blue: 0.92).opacity(0.09 + 0.10 * depth + 0.06 * taste)),
+                lineWidth: 0.8 + 0.4 * scale
+            )
+        }
+    }
+
+    /// One of the quick ones, at the water's clock: its own two slow
+    /// sines, the carry of the tide, and the scatter of the hand.
+    /// Nothing else, and nothing stored — the water keeps what stays,
+    /// and lets go what passes.
+    private static func drifterRawPosition(
+        index: Int,
+        size: CGSize,
+        t: Double,
+        carry: (dx: Double, dy: Double),
+        finger: CGPoint?,
+        presence: Double
+    ) -> (x: Double, y: Double) {
+        let seed = 0x50415353
+
+        // its own wandering: two slow sines per axis, incommensurate,
+        // so no two of its paths are the same, and none of them repeats
+        let x0 = (0.10 + 0.80 * Self.fuzz(seed, 100 + index)) * Double(size.width)
+        let y0 = (0.08 + 0.80 * Self.fuzz(seed, 110 + index)) * Double(size.height)
+        let wx = (45 + 70 * Self.fuzz(seed, 120 + index)) * sin(t * 2 * .pi / (61 + 53 * Self.fuzz(seed, 121 + index)) + 2 * .pi * Self.fuzz(seed, 122 + index))
+            + (25 + 35 * Self.fuzz(seed, 123 + index)) * sin(t * 2 * .pi / (37 + 29 * Self.fuzz(seed, 124 + index)) + 2 * .pi * Self.fuzz(seed, 125 + index))
+        let wy = (40 + 60 * Self.fuzz(seed, 126 + index)) * sin(t * 2 * .pi / (67 + 49 * Self.fuzz(seed, 127 + index)) + 2 * .pi * Self.fuzz(seed, 128 + index))
+            + (22 + 30 * Self.fuzz(seed, 129 + index)) * sin(t * 2 * .pi / (41 + 31 * Self.fuzz(seed, 130 + index)) + 2 * .pi * Self.fuzz(seed, 131 + index))
+
+        // the ride: it carries the current with it, and turns late
+        let rideFactor = 0.30 + 0.45 * Self.fuzz(seed, 132 + index)
+        var x = x0 + wx + carry.dx * Self.drifterRideLag * rideFactor
+        var y = y0 + wy + carry.dy * Self.drifterRideLag * rideFactor
+
+        // the scatter: the hand parts the quick ones, and the water
+        // does not remember the hand
+        let s = scatterOffset(from: CGPoint(x: x, y: y), finger: finger, presence: presence)
+        x += s.dx
+        y += s.dy
+        return (x, y)
+    }
+
+    /// The water wraps: what leaves one side comes in the other, so
+    /// the passing never runs out, and the water never has to
+    /// remember any of it.
+    private static func drifterWrapped(_ raw: CGPoint, in size: CGSize) -> CGPoint {
+        let spanX = Double(size.width) + 60
+        let spanY = Double(size.height) + 60
+        var x = Double(raw.x).truncatingRemainder(dividingBy: spanX)
+        if x < 0 { x += spanX }
+        var y = Double(raw.y).truncatingRemainder(dividingBy: spanY)
+        if y < 0 { y += spanY }
+        return CGPoint(x: x - 30, y: y - 30)
+    }
+
+    /// The scatter the hand makes on the quick ones: a soft push away,
+    /// strongest close in, gone by 180 points. The water does not hold
+    /// them, so when the hand is gone they drift back, and the water
+    /// does not remember the hand.
+    static func scatterOffset(from p: CGPoint, finger: CGPoint?, presence: Double) -> (dx: Double, dy: Double) {
+        guard let f = finger, presence > 0.001 else { return (0, 0) }
+        let x = Double(p.x) - Double(f.x)
+        let y = Double(p.y) - Double(f.y)
+        let d = hypot(x, y)
+        guard d > 1 else { return (0, 0) }
+        let falloff = 1 - Self.smoothstep(50, 180, d)
+        let push = 150 * presence * falloff * falloff
+        return (x / d * push, y / d * push)
     }
 
     // MARK: - Drawing
@@ -308,7 +484,7 @@ struct ContentView: View {
     /// Deterministic unit random from (seed, channel): the fuzz behind
     /// every barnacle's shape, colour, and rhythm.
     @inline(__always)
-    private func fuzz(_ seed: Int, _ channel: Int) -> Double {
+    private static func fuzz(_ seed: Int, _ channel: Int) -> Double {
         var z = UInt64(bitPattern: Int64(seed)) &+ UInt64(bitPattern: Int64(channel)) &* 0x9E3779B97F4A7C15
         z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
         z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
@@ -318,17 +494,17 @@ struct ContentView: View {
 
     private func shellColor(seed: Int) -> Color {
         Color(
-            hue: 0.082 + 0.05 * fuzz(seed, 1),
-            saturation: 0.14 + 0.12 * fuzz(seed, 2),
-            brightness: 0.80 + 0.10 * fuzz(seed, 3)
+            hue: 0.082 + 0.05 * Self.fuzz(seed, 1),
+            saturation: 0.14 + 0.12 * Self.fuzz(seed, 2),
+            brightness: 0.80 + 0.10 * Self.fuzz(seed, 3)
         )
     }
 
     private func plateColor(seed: Int) -> Color {
         Color(
-            hue: 0.088 + 0.035 * fuzz(seed, 41),
-            saturation: 0.30 + 0.14 * fuzz(seed, 42),
-            brightness: 0.42 + 0.12 * fuzz(seed, 43)
+            hue: 0.088 + 0.035 * Self.fuzz(seed, 41),
+            saturation: 0.30 + 0.14 * Self.fuzz(seed, 42),
+            brightness: 0.42 + 0.12 * Self.fuzz(seed, 43)
         )
     }
 
@@ -337,17 +513,17 @@ struct ContentView: View {
     private func fingerPresence(now: Date) -> Double {
         if fingerDown {
             let t = now.timeIntervalSince(fingerDownSince ?? now)
-            return smoothstep(0, 0.14, t)
+            return Self.smoothstep(0, 0.14, t)
         } else if let up = fingerUpSince {
             let t = now.timeIntervalSince(up)
-            return 1 - smoothstep(0, 0.5, t)
+            return 1 - Self.smoothstep(0, 0.5, t)
         } else {
             return 0
         }
     }
 
     @inline(__always)
-    private func smoothstep(_ a: Double, _ b: Double, _ x: Double) -> Double {
+    private static func smoothstep(_ a: Double, _ b: Double, _ x: Double) -> Double {
         let t = max(0, min(1, (x - a) / (b - a)))
         return t * t * (3 - 2 * t)
     }
@@ -357,7 +533,7 @@ struct ContentView: View {
     /// adult size across the first minute of its life. After that it is
     /// what it is: the size the water remembers it by.
     private func grownRadius(seed: Int, size: Double, age: Double) -> Double {
-        let adult = size * (1.15 + 0.45 * fuzz(seed, 9))
+        let adult = size * (1.15 + 0.45 * Self.fuzz(seed, 9))
         let p = min(1, age / 60)
         let eased = 1 - pow(1 - p, 2)
         return size + (adult - size) * eased
@@ -431,8 +607,8 @@ struct ContentView: View {
 
         // drifting motes: carried by the tide, bent around the hand
         for i in 0..<16 {
-            let x0 = fuzz(0x5EED, i) * size.width
-            let speed = 5 + 9 * fuzz(0x5EED, 100 + i)
+            let x0 = Self.fuzz(0x5EED, i) * size.width
+            let speed = 5 + 9 * Self.fuzz(0x5EED, 100 + i)
             let cycle = size.height + 40
             let progress = (t * speed + Double(i) * 977.13).truncatingRemainder(dividingBy: cycle)
             var y = size.height + 20 - progress
@@ -441,7 +617,7 @@ struct ContentView: View {
             // the farther the current has taken it
             let upFor = progress / speed
             let carry = tideFlow(t - upFor / 2)
-            let carryFactor = 0.8 + 0.4 * fuzz(0x5EED, 150 + i)
+            let carryFactor = 0.8 + 0.4 * Self.fuzz(0x5EED, 150 + i)
             x += carry.dx * upFor * carryFactor
             y += carry.dy * upFor * carryFactor * 0.35
             let span = Double(size.width) + 40
@@ -454,8 +630,8 @@ struct ContentView: View {
                 xx += parting.dx
                 y += parting.dy
             }
-            let radius = 0.7 + 1.5 * fuzz(0x5EED, 200 + i)
-            let alpha = 0.04 + 0.18 * fuzz(0x5EED, 300 + i)
+            let radius = 0.7 + 1.5 * Self.fuzz(0x5EED, 200 + i)
+            let alpha = 0.04 + 0.18 * Self.fuzz(0x5EED, 300 + i)
             context.fill(
                 Path(ellipseIn: CGRect(x: xx - radius, y: y - radius, width: radius * 2, height: radius * 2)),
                 with: .color(.white.opacity(alpha))
@@ -477,14 +653,14 @@ struct ContentView: View {
         // settling into the rock: with age the breathing slows, and the
         // creature answers the current less eagerly — the old have seen
         // the tide, and turn to it only when it comes close
-        let ageSettle = smoothstep(120, 1800, age)
+        let ageSettle = Self.smoothstep(120, 1800, age)
 
         // breathing and drifting — the anchored body leans into the
         // current, the way a holdfast leans into the sea
         let tideNow = tide(t)
-        let breathePhase = 2 * .pi * fuzz(seed, 50)
-        let driftPhase = 2 * .pi * fuzz(seed, 51)
-        let lean = 4.5 * tideNow.strength * (0.7 + 0.6 * fuzz(seed, 56))
+        let breathePhase = 2 * .pi * Self.fuzz(seed, 50)
+        let driftPhase = 2 * .pi * Self.fuzz(seed, 51)
+        let lean = 4.5 * tideNow.strength * (0.7 + 0.6 * Self.fuzz(seed, 56))
         let swayX = sin(t * 0.35 + driftPhase) * 3 + cos(tideNow.angle) * lean
         let swayY = cos(t * 0.27 + driftPhase * 1.31) * 3 + sin(tideNow.angle) * lean
 
@@ -496,7 +672,7 @@ struct ContentView: View {
             let dy = Double(fp.y) - Double(barnacle.y) * Double(size.height)
             let d = hypot(dx, dy)
             if d > 0.001 {
-                attention = presence * (1 - smoothstep(44, 180, d))
+                attention = presence * (1 - Self.smoothstep(44, 180, d))
                 angleToFinger = atan2(dy, dx)
             }
         }
@@ -542,11 +718,11 @@ struct ContentView: View {
         // body: a centre lobe and a ring of lobes, wobbling gently
         var body = Path()
         body.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
-        let lobeCount = 5 + Int(fuzz(seed, 4) * 4)
+        let lobeCount = 5 + Int(Self.fuzz(seed, 4) * 4)
         for i in 0..<lobeCount {
-            let angle = 2 * .pi * fuzz(seed, 10 + i) + 0.18 * sin(t * 0.5 + breathePhase + Double(i))
-            let distance = radius * (0.45 + 0.45 * fuzz(seed, 20 + i))
-            let lobeRadius = radius * (0.30 + 0.35 * fuzz(seed, 30 + i))
+            let angle = 2 * .pi * Self.fuzz(seed, 10 + i) + 0.18 * sin(t * 0.5 + breathePhase + Double(i))
+            let distance = radius * (0.45 + 0.45 * Self.fuzz(seed, 20 + i))
+            let lobeRadius = radius * (0.30 + 0.35 * Self.fuzz(seed, 30 + i))
                 * (1 + 0.05 * sin(t * 0.9 + breathePhase + Double(i) * 1.13))
             let lobeCenter = CGPoint(
                 x: center.x + cos(angle) * distance,
@@ -565,15 +741,15 @@ struct ContentView: View {
         }
 
         // shell plates
-        let plateCount = 4 + Int(fuzz(seed, 60) * 3)
+        let plateCount = 4 + Int(Self.fuzz(seed, 60) * 3)
         for i in 0..<plateCount {
-            let angle = 2 * .pi * fuzz(seed, 70 + i) + 0.35 * sin(t * 0.21 + Double(i) * 1.7)
-            let distance = radius * (0.28 + 0.30 * fuzz(seed, 80 + i))
+            let angle = 2 * .pi * Self.fuzz(seed, 70 + i) + 0.35 * sin(t * 0.21 + Double(i) * 1.7)
+            let distance = radius * (0.28 + 0.30 * Self.fuzz(seed, 80 + i))
             let plateCenter = CGPoint(
                 x: center.x + cos(angle) * distance,
                 y: center.y + sin(angle) * distance
             )
-            let long = radius * (0.20 + 0.14 * fuzz(seed, 90 + i))
+            let long = radius * (0.20 + 0.14 * Self.fuzz(seed, 90 + i))
             let short = long * 0.62
             var plateContext = context
             plateContext.translateBy(x: plateCenter.x, y: plateCenter.y)
@@ -621,14 +797,14 @@ struct ContentView: View {
         // toward a hand, which makes a richer local current. The young
         // taste everything; the old reach shorter, and fainter.
         let cirriThreshold = 0.04 + 0.10 * ageSettle
-        let plumeBase = tideNow.angle + (fuzz(seed, 55) * 0.5 - 0.25)
+        let plumeBase = tideNow.angle + (Self.fuzz(seed, 55) * 0.5 - 0.25)
         var plumeReach = radius * (0.55 + 0.55 * tideNow.strength)
-            * (0.7 + 0.5 * fuzz(seed, 44)) * (1 - 0.35 * ageSettle)
+            * (0.7 + 0.5 * Self.fuzz(seed, 44)) * (1 - 0.35 * ageSettle)
         var plumeAngle = plumeBase
         var plumeVis = 0.14 + 0.10 * tideNow.strength
         if attention > cirriThreshold {
             let beyond = (attention - cirriThreshold) / max(0.25, 1 - cirriThreshold)
-            plumeAngle = blendAngle(plumeBase, angleToFinger, min(1.0, 1.5 * attention))
+            plumeAngle = Self.blendAngle(plumeBase, angleToFinger, min(1.0, 1.5 * attention))
             plumeReach = max(plumeReach, radius * (0.55 + 0.65 * beyond))
             plumeVis = max(plumeVis, 0.32 * beyond + 0.10)
         }
@@ -686,7 +862,7 @@ struct ContentView: View {
         let age = now.timeIntervalSince(ghost.departedAt)
         guard age < 150 else { return }
         // the trace keeps, then dissolves
-        let fade = 1 - smoothstep(40, 150, age)
+        let fade = 1 - Self.smoothstep(40, 150, age)
         guard fade > 0.001 else { return }
 
         let center = CGPoint(x: ghost.x * size.width, y: ghost.y * size.height)
