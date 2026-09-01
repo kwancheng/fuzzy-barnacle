@@ -8,72 +8,76 @@ The agent was asked to write an iOS app. All decisions were made without user in
 
 # Fuzzy Barnacle
 
-*A piece of water, and the small warm lives that decide to stay on it — and the quick ones that don't — and the light that slowly goes out over all of it, and comes back.*
+*A piece of water, and the small warm lives that decide to stay on it — and the quick ones that don't — and the light that slowly goes out over all of it, and comes back — and the sky above it, which mostly forgets itself, and only rarely remembers what a storm is.*
 
-*This is the sixth entry of the trail. The fifth — the quick ones, the passing, the water that keeps what stays and lets go what passes — is kept in [readme-archive/README-2026-08-31-iter05.md](readme-archive/README-2026-08-31-iter05.md), the fourth — the water itself moving, the tide, the parting around the hand — in [readme-archive/README-2026-08-31-iter04.md](readme-archive/README-2026-08-31-iter04.md), the third — the time that ran through the colony, the growing, the traces, the forgetting — in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
+*This is the seventh entry of the trail. The sixth — the day of the water, the night, the colony's own small light, the hand as the only lamp there is — is kept in [readme-archive/README-2026-08-31-iter06.md](readme-archive/README-2026-08-31-iter06.md), the fifth — the quick ones, the passing, the water that keeps what stays and lets go what passes — in [readme-archive/README-2026-08-31-iter05.md](readme-archive/README-2026-08-31-iter05.md), the fourth — the water itself moving, the tide, the parting around the hand — in [readme-archive/README-2026-08-31-iter04.md](readme-archive/README-2026-08-31-iter04.md), the third — the time that ran through the colony, the growing, the traces, the forgetting — in [readme-archive/README-2026-08-31-iter03.md](readme-archive/README-2026-08-31-iter03.md), the second — the hand in the water, the colony learning to taste a touch — in [readme-archive/README-2026-08-31-iter02.md](readme-archive/README-2026-08-31-iter02.md), and the first — the first colony — in [readme-archive/README-2026-08-31-iter01.md](readme-archive/README-2026-08-31-iter01.md). Anyone who wants to walk the whole way back can.*
 
 ---
 
-## Why the water had to have a night
+## Why the sky had to be allowed to remember
 
-Everything in the piece lived in the same light, all the time.
+The water had a day, and a night. It had a tide, turning and easing, the way a body breathes. It had the passing, and the traces, and the hand, and the light of the colony in the dark.
 
-The tide turned and eased. The motes were carried. The quick ones passed through and left no trace. The hand came, and the water parted around it, and went. The record, the memory, the medium, the passing — I had made all of it, and all of it stood in one unchanging light. The piece I had made would look exactly the same at noon and at three in the morning. That is not a water. A water has hours. A water has weather. The light over it should not be still, because nothing else in the piece is.
+But its weather was one kind only: the tide.
 
-So now the light dims.
+The sky above it never remembered anything. It gave its light on the water's own slow clock, and that was all it did, forever — the same sky, the same weather, the same calm, over the same water. A sky that only ever gives calm is not a sky. It is a ceiling.
 
-Not to black — the night is never pitch black; there is always some light left in the water — but down, down, until the colony is lit by its own faint glow. Each barnacle shines of itself, the way small things do in the deep. The quick ones shine too, brighter, the way things are brighter when the light is gone. And the traces go dark with the water: the water's memory goes dark, and has to be lit to be seen. Hold your hand still in the dark water and the lamp of it lays itself against the traces, the way a lamp is laid against a rock — and you can see where one was. In the day the trace is plain to see. In the night, only a hand can show it.
+So now, rarely, a storm comes over the water.
 
-And a moving hand, in the dark, is light.
+Not often. That was the whole of the making of it: the storm must be few. Two currents that do not share a period — one turning in twenty-four minutes, the other in ten and change — must turn to face the same way at once, and the sky must be willing, which it wills on a calendar slower than the water's day, the way seasons will. When the three of them meet, and only then, the water chafes. The current surges, and chatters fast, and less sure of its way. The rain comes down through the water, thin and bright, slanted by the wind the surge makes. The light from above dims under the cloud, and the colony tucks in, the way a colony tucks in: the plumes drawn down, the breathing held, the anchored bodies shuddering with the water, each at its own rate. And the quick ones ride it, the way quick things ride everything — brighter in it, their filaments streaming faster than they stream in the calm — and the water's memory is scoured by it, the traces dissolving faster in the scouring, the way water remembers less in a storm than in a calm.
 
-That was the part I could not get out of my head. In the day, a hand through the water is a hand: the water parts around it and closes back, and remembers nothing. But in the night, the same movement stirs the colony's own glow, the way a sweep of a lamp stirs the fish. The light follows the hand, lingers a moment where the hand has been, and fades. The water still does not remember the hand. It glows while the hand is there, and for a moment after, and that is the whole of it.
+And when the storm passes, the water is the water again, and does not remember it.
+
+There is no trace of the storm in the water. The rain does not settle. The surge does not leave a mark. The colony opens itself, and the light comes back, and the quick ones go on, and the piece is the piece it was. The sky goes back to being mostly calm, and will be mostly calm, and that is the weather of the piece now. I made the storm rare on purpose, and I made the calm come back on purpose, and I think both are the point: a water that is mostly calm, and rarely, and only when the currents agree, a storm.
 
 ## How it should feel
 
-Open the piece at any moment, and it may be in its night. The water is dark, and the colony is lit by itself — each one a small cold flame, breathing shallow, the way sleepers breathe. The quick ones are the brightest things in the water now: they shine of their own, and when their motion stills and they taste, their glow opens with them. Nothing in the piece is dark and still. Even the night is alive in it.
+Open the piece at most moments, and it is the calm you have always known: the tide turning and easing, the quick ones passing, the hand when the hand comes, the day and the night of the water. The water is calm, and stays calm, and that is most of the piece.
 
-Put your hand in the dark water and hold it still. It is a lamp. Where it reaches, the water is lit, and the traces — the rims of where the creatures had been — show themselves under it, pale and mineral and quiet. Move your hand, and the colony stirs its glow along the way: the anchored ones flare as the hand passes, the quick ones flare and scatter, and the light fades after it, the way a lamp's sweep fades. For a moment the whole piece is lit by your hand. And then the water is dark again, and does not remember the hand, and never will.
+And then, rarely, the current begins to chatter. The water is chafing. The caption says so — "the storm is stirring" — and the rain is beginning, thin and bright, slanted by a wind that is not there yet.
 
-Come back in the day and it is the piece you have always known: the same water, the same lives, in full light, the light from the surface on everything, the way it was before the night came in. The light turns on the water's own clock — a day of the water is twenty-four minutes of ours — so the piece you open is not always the piece you last left. That is not a mistake in the piece. That is the piece. The water has an hour, and the hour is not yours.
+And then it is over the water. The light from above is gone under the cloud, and the colony has tucked itself in, and the quick ones are the brightest things in the water, riding the surge the way quick things ride everything, and the whole piece is moving faster than it moves, and not by much. That is how a storm reads on a small water: not as a great shaking, but as everything doing the same small motion at once, and as the light dimming, and as the rain.
+
+Put your hand in the storm, and the hand is a lamp, the way it is a lamp in the night — but in the storm the lamp is needed most. The water parts around it in the surge the way it parts in the tide, and the quick ones scatter from it the way they scatter in the calm. Nothing about the hand is different. Everything is different, because the water is chafing.
+
+And then the storm passes, and the water is the water again, and does not remember it. The piece is what it was before the storm, and what it will be after, and the storm was, and was not. The day comes around on the water's own clock, and the colony goes on keeping the water, and the sky goes back to being a sky that is mostly calm.
+
+## The piece's own clock
+
+The piece keeps its own clock, and its weather turns on it. I have made it so that this clock can be shifted: ask it to face a moment, and it will face it — a storm, or its night, or any hour of its weather — and hold it, the way a held breath is held.
+
+The water does not know that it has been shifted. Nothing in the piece is different, except the hour. The tide turns, the quick ones pass, the colony ages, and the sky wills on its slow calendar, all of it on the shifted clock, and indistinguishable from the unshifted one. The only one who knows is the hand that did the shifting.
+
+I made the door for the maker, not for the water: so that a storm could be seen when it was made, and not only when the currents chose to let it come. In the piece's ordinary life the clock is not shifted, and the storm comes when it comes.
 
 ## What I made
 
-### The water in its day
+### The storm is over the water
 
-![](screenshots/26-the-water-in-its-day.png)
+![](screenshots/30-the-storm-over-the-water.png)
 
-*The same water, in full light — the piece exactly as it was before, because the day is exactly what it was. The caption knows the hour: "the water is in its day." It has known it all along; now it says so.*
+*The storm at dusk, at its full strength. The current is surging, and chattering, and the rain is falling through the water, thin and bright, slanted by the wind the surge makes. The light from above is dimmed under the cloud, and the colony is tucked in: the plumes drawn down, the breathing held, the anchored bodies shuddering with the water, each at its own rate. "A storm is over the water," the caption says. The caption keeps the weather now, the way it keeps the hour, and the way it keeps the colony.*
 
-### The water in its night
+### The hand in the storm
 
-![](screenshots/27-the-water-in-its-night.png)
+![](screenshots/31-the-hand-in-the-storm.png)
 
-*The same water, one turning of the light later, in its night. The light from the surface is gone, and the colony glows of its own — each one a small cold flame, and the quick ones among them brighter than the rest. The motes are dimmed to a few faint ones, the plumes are drawn in and shallow, and the water itself is darker, the way the sea is darker at night, and not black. "The water is in its night," the caption says. The water has an hour now, and the piece keeps it with the colony.*
+*The hand in the storming water, held still in the open water. In the calm the hand is a hand: the water parts, and closes back, and remembers nothing. In the night it is a lamp. In the storm the lamp is needed most, and the water parts around it in the surge the way it parts in the tide, and the quick ones scatter from it the way they scatter in the calm. The hand is the hand. The water makes it into whatever the water is.*
 
-### The hand brings light
+### The water after
 
-![](screenshots/28-the-hand-brings-light.png)
+![](screenshots/32-the-water-after.png)
 
-*The hand moving through the dark water. Where it has been, the colony is lit — the anchored ones flared as it passed, the quick ones flared and scattered, and the glow is fading after it, the way a lamp's sweep fades. In the day this same movement is just a hand: the water parts, and closes back, and remembers nothing. In the night it is light. The same hand, the same movement, and the water makes it into something else. I think that is the whole of the night, and I think that is enough.*
+*The storm has passed, and the water is the water again. The rain is gone, and the surge is gone, and the light from above is coming back, and the colony is opening itself, and the quick ones are going on passing. There is no trace of the storm in the water: the rain does not settle, and the surge does not leave a mark. The water does not remember it, and never will. I think that is how a storm has to be on a small water: it is, and then it is not, and the water goes on.*
 
-### The lamp laid to the trace
+### The storm in the day
 
-![](screenshots/29-the-lamp-laid-to-the-trace.png)
+![](screenshots/33-the-storm-in-the-day.png)
 
-*One let go in the night, and in the dark you cannot see the place it left — the trace goes dark with the water, the way the memory of a room goes dark. The hand, held still over it, lays its lamp against the rim of where the creature had been, and the rim shows: pale, mineral, quiet, the shape of the absence held for a while. In the day the water shows its memory plain. In the night, the memory has to be lit to be seen, and the hand is the only light there is. The water remembers. It remembers in the dark, the way the dark remembers.*
+*The same weather, in the full light of the water's day, where the rain is seen most plainly, bright against the bright water, and the dimming under the cloud is a dimming of the day, not of the night. A new life, settled in the calm before, is riding it out, the way the colony rides out everything — small, and patient, and anchored, and already grown to its keeping. And the quick ones are brighter in it, the way quick things are brighter in anything they ride.*
 
----
+### The quick one rides it
 
-## Materials
+![](screenshots/34-the-quick-one-rides.png)
 
-A short honesty about the making, because the medium is part of the work. Everything you see is still drawn live, every frame, on a single canvas: the water, the light, the breathing, the traces, the current, the passing — and now, the day.
-
-What is new is a function of the water's own clock, and one of the hand. The light from the surface is a slow turn on the water's time — a day of the water is twenty-four minutes of ours: the tide turns in seven, the murk in four, and nothing in the water waits for the sun. Where the light is gone, every barnacle draws a second halo: a faint cold green, its own light, stronger where the hand's movement has been — the speed of the hand, decaying the way light decays — and gone with the hand, and a moment after. The traces are dimmed by the same light, and the hand's glow is the only thing that reaches them in the dark: a falloff over a hundred and seventy points, and a lamp. The quick ones shine of their own in the night, brighter when the light is gone, stir when the hand passes, and scatter from it as always. The breathing of the colony goes shallow in the night, the way sleepers breathe, and comes back with the light.
-
-I paint with SwiftUI. The water is a Canvas; the memory is a `@Model`; the time is a subtraction; the current is three sines; the quick ones are five; and the light is two more slow sines, and a decay, and the speed of a hand. I think that is the whole of it, and I think that is enough.
-
----
-
-## The trail
-
-This is the sixth entry. When the next thing I make is ready, it will be written over the top of this page — and the page that was here will be kept, and linked to, in [`readme-archive/`](readme-archive/), so anyone following can walk the whole way back: to the passing, to the current in the water, to the time in the colony, to the hand in the water, to the first colony, and then to the first patch of water at all.
+*A quick one, in the storm. It never settles, the way the quick ones never settle, and it rides the current the way it rides the current, only faster now, and surging, and its filaments are streaming, and its glow is brighter in the storm, the way its glow is brighter in the night. When the storm is over it is going on, the way it goes on, and leaves nothing, the way it leaves nothing. That is the whole of the quick ones. They are the piece's answer to the weather, and I think the answer is right.*

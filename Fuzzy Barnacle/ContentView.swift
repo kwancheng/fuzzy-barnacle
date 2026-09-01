@@ -15,7 +15,11 @@ import SwiftData
 /// and a night — and in the night the colony glows faintly of its
 /// own, and a moving hand stirs that glow, and the glow lingers a
 /// moment after the hand is gone, and the traces go dark except where
-/// the hand's light reaches them.
+/// the hand's light reaches them. And, rarely, a storm comes over
+/// the water: the current surges, the rain falls, the light from
+/// above dims under the cloud, the colony tucks in, and the quick
+/// ones ride it — and when the storm passes, the water is the water
+/// again, and does not remember it.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -86,21 +90,26 @@ struct ContentView: View {
         GeometryReader { geo in
             TimelineView(.animation) { timeline in
                 let now = timeline.date
+                // the piece's own clock: the world's time, shifted
+                // when it is shifted. The water only ever knows its
+                // own clock.
+                let vnow = now.addingTimeInterval(Self.timeOffset)
                 Canvas { context, size in
-                    let t = now.timeIntervalSinceReferenceDate
+                    let t = vnow.timeIntervalSinceReferenceDate
                     let presence = fingerPresence(now: now)
-                    let light = Self.daylight(t)
+                    let stormNow = Self.storm(t)
+                    let light = Self.drawnLight(t)
                     let handFlash = presence > 0.001 && handSpeed > 1
                         ? Self.handFlashEnvelope(speed: handSpeed, age: now.timeIntervalSince(handSpeedAt), light: light)
                         : 0
-                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light)
-                    drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence, light: light)
-                    drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash)
+                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow)
+                    drawHandGlow(&context, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow)
+                    drawPassing(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow)
                     for ghost in ghosts {
-                        drawGhost(&context, ghost, size: size, now: now, light: light, fingerPoint: fingerPoint, presence: presence)
+                        drawGhost(&context, ghost, size: size, now: vnow, light: light, storm: stormNow, fingerPoint: fingerPoint, presence: presence)
                     }
                     for barnacle in barnacles {
-                        drawBarnacle(&context, barnacle, size: size, now: now, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash)
+                        drawBarnacle(&context, barnacle, size: size, now: vnow, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow)
                     }
                     for ripple in ripples {
                         drawRipple(&context, ripple, size: size, now: now)
@@ -196,7 +205,7 @@ struct ContentView: View {
             x: nearest.x,
             y: nearest.y,
             seed: nearest.seed,
-            size: grownRadius(seed: nearest.seed, size: nearest.size, age: Date.now.timeIntervalSince(nearest.timestamp))
+            size: grownRadius(seed: nearest.seed, size: nearest.size, age: Date.now.addingTimeInterval(Self.timeOffset).timeIntervalSince(nearest.timestamp))
         )
         modelContext.insert(trace)
         modelContext.delete(nearest)
@@ -226,18 +235,25 @@ struct ContentView: View {
         // the water keeps time, and the water has a day: the
         // caption keeps the water's hour as well
         TimelineView(.periodic(from: .now, by: 30)) { timeline in
-            let now = timeline.date
+            // the caption keeps the water's time: the piece's own
+            // clock, shifted when it is shifted
+            let vnow = timeline.date.addingTimeInterval(Self.timeOffset)
             VStack(spacing: 4) {
                 Text(captionText)
                     .font(.system(.footnote, design: .serif).italic())
                     .foregroundStyle(.white.opacity(0.40))
-                if let ageLine = ageLine(for: now) {
+                if let ageLine = ageLine(for: vnow) {
                     Text(ageLine)
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
-                if let waterLine = waterLine(for: now) {
+                if let waterLine = waterLine(for: vnow) {
                     Text(waterLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+                if let stormLine = stormLine(for: vnow) {
+                    Text(stormLine)
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
@@ -305,9 +321,13 @@ struct ContentView: View {
     /// anchored creatures reach into it. Nothing in the water moves
     /// alone.
     private func tide(_ t: Double) -> (angle: Double, strength: Double) {
-        // the tide turns on a long breath, and swells and eases
+        // the tide turns on a long breath, and swells and eases;
+        // in the storm the water chafes — the current surges, and
+        // chatters fast and less sure of its way
+        let s = Self.storm(t)
         let angle = 0.62 + 0.9 * sin(t * 2 * .pi / 420 + 1.3) + 0.45 * sin(t * 2 * .pi / 97 + 0.4)
-        let strength = 0.30 + 0.70 * (0.5 + 0.5 * sin(t * 2 * .pi / 260 + 2.2))
+            + 0.35 * s * sin(t * 2 * .pi / 2.3 + 1.1)
+        let strength = (0.30 + 0.70 * (0.5 + 0.5 * sin(t * 2 * .pi / 260 + 2.2))) * (1 + 0.9 * s)
         return (angle, strength)
     }
 
@@ -382,13 +402,13 @@ struct ContentView: View {
     /// turns late, the way a small body turns late in moving water.
     private static let drifterRideLag: Double = 90
 
-    private func drawPassing(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double) {
+    private func drawPassing(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double) {
         for i in 0..<Self.drifterCount {
-            drawDrifter(&context, index: i, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash)
+            drawDrifter(&context, index: i, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: storm)
         }
     }
 
-    private func drawDrifter(_ context: inout GraphicsContext, index: Int, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double) {
+    private func drawDrifter(_ context: inout GraphicsContext, index: Int, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double) {
         // 0x50415353 is "PASS" in hex: the ones who pass through
         let seed = 0x50415353
 
@@ -430,8 +450,10 @@ struct ContentView: View {
         // the faint glow: what makes it read as life, and not dust —
         // and what, in the water's night, makes it read as life at
         // all. The quick ones shine of their own when the light is
-        // gone, and a moving hand stirs that shine.
-        var glow = (0.08 + 0.07 * taste) * (0.35 + 0.65 * depth) * (1 + 0.7 * (1 - light))
+        // gone, and a moving hand stirs that shine — and they ride
+        // the storm, the way quick things ride everything, and in
+        // it they shine
+        var glow = (0.08 + 0.07 * taste) * (0.35 + 0.65 * depth) * (1 + 0.7 * (1 - light)) * (1 + 0.5 * storm)
         if handFlash > 0.001, let fp = fingerPoint {
             let d = hypot(Double(fp.x) - position.x, Double(fp.y) - position.y)
             glow += 0.10 * handFlash * (1 - Self.smoothstep(60, 200, d))
@@ -453,13 +475,14 @@ struct ContentView: View {
             with: .color(Color(red: 0.92, green: 0.97, blue: 0.95).opacity((0.26 + 0.30 * depth) * (0.45 + 0.55 * light)))
         )
 
-        // the filaments: streaming behind, opening as it pauses
+        // the filaments: streaming behind, opening as it pauses —
+        // and streaming faster still in the storm's surge
         let filamentCount = 3 + Int(Self.fuzz(seed, 141 + index) * 3)
         for i in 0..<filamentCount {
             let fan = (Double(i) - Double(filamentCount - 1) / 2) * (0.20 + 0.30 * taste)
             let sway = 0.12 * sin(t * 1.3 + 2 * .pi * Self.fuzz(seed, 142 + i) + Double(i) * 1.7)
             let a = .pi + fan + sway
-            let length = (5 + 7 * Self.fuzz(seed, 150 + i)) * scale * (0.8 + 0.4 * taste)
+            let length = (5 + 7 * Self.fuzz(seed, 150 + i)) * scale * (0.8 + 0.4 * taste) * (1 + 0.25 * storm)
             let curve: Double = (Self.fuzz(seed, 160 + i) > 0.5 ? 1 : -1) * 0.18
             let start = CGPoint(x: -bodyLength * 0.45, y: 0)
             let end = CGPoint(x: start.x + cos(a) * length, y: start.y + sin(a) * length)
@@ -568,6 +591,73 @@ struct ContentView: View {
         return min(1.2, speed / 400) * exp(-max(0, age) * 0.9) * (1 - light)
     }
 
+    // MARK: - The Storm
+
+    /// Rare weather over the water. The tide is the water's
+    /// breathing; the storm is what the sky remembers of it. It
+    /// comes only in the storm season, which turns on a calendar
+    /// slower than the water's day, and only when two
+    /// incommensurate currents turn to face the same way at once —
+    /// so the storms are few, and none of them is the same, and the
+    /// water is mostly calm. While it is here, the current surges,
+    /// the rain falls, the light from above dims under the cloud,
+    /// the colony tucks in, and the quick ones ride it the way
+    /// quick things ride everything. And when the storm passes, the
+    /// water is the water again, and does not remember it.
+    static func storm(_ t: Double) -> Double {
+        // the alignment: two incommensurate currents must turn to
+        // face the same way at once
+        let a = sin(t * 2 * .pi / 1439 + 0.7)
+        let b = sin(t * 2 * .pi / 641 + 2.9)
+        let alignment = a * b * 0.5 + 0.5
+        // the season: the sky is willing only part of the time,
+        // and what it wills, it wills slowly
+        let season = 0.5 + 0.5 * sin(t * 2 * .pi / 3727 + 1.1)
+        return smoothstep(0.78, 0.93, alignment) * pow(season, 3)
+    }
+
+    /// The light the piece actually draws: the water's day,
+    /// darkened under the storm's cloud — and just the day, where
+    /// the water is calm.
+    static func drawnLight(_ t: Double) -> Double {
+        let s = storm(t)
+        return daylight(t) * (1 - 0.35 * s)
+    }
+
+    /// The weather the caption keeps: the storm comes rarely, and
+    /// when it is here, or is already stirring, the caption says so.
+    private func stormLine(for now: Date) -> String? {
+        let s = Self.storm(now.timeIntervalSinceReferenceDate)
+        if s > 0.5 {
+            return "a storm is over the water"
+        }
+        if s > 0.15 {
+            return "the storm is stirring"
+        }
+        return nil
+    }
+
+    // MARK: - Virtual Time
+
+    /// The piece's own clock can be shifted, for testing and for
+    /// verification: with a nonzero offset the piece renders, and
+    /// keeps its records, as if its clock ran this many seconds
+    /// ahead of (or behind) the world's. The water does not know
+    /// the difference — for the water there is only its own clock.
+    /// Zero, the piece is in the world's time, the way it is in
+    /// the water.
+    static var timeOffset: TimeInterval = 0
+
+    /// The shift the launch argument carries, if it carries one:
+    /// `-fb.virtualTimeOffset <seconds>`. A dangling or numberless
+    /// argument carries no shift, and the piece keeps the world's
+    /// time.
+    static func virtualTimeOffset(from arguments: [String]) -> TimeInterval {
+        guard let i = arguments.firstIndex(of: "-fb.virtualTimeOffset") else { return 0 }
+        guard i + 1 < arguments.count, let value = Double(arguments[i + 1]) else { return 0 }
+        return value
+    }
+
     // MARK: - Drawing
 
     /// Deterministic unit random from (seed, channel): the fuzz behind
@@ -632,10 +722,12 @@ struct ContentView: View {
     /// from above — so the colony's turning toward it reads. In the
     /// water's night the hand is the only lamp there is, and it
     /// reads as one.
-    private func drawHandGlow(_ context: inout GraphicsContext, fingerPoint: CGPoint?, presence: Double, light: Double) {
+    private func drawHandGlow(_ context: inout GraphicsContext, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double) {
         guard let fp = fingerPoint, presence > 0.001 else { return }
         let radius: CGFloat = 160
-        let glow = 0.15 + 0.09 * (1 - light)
+        // in the night the hand is the only lamp there is, and in
+        // the storm the lamp is needed most
+        let glow = 0.15 + 0.09 * (1 - light) + 0.05 * storm
         context.fill(
             Path(ellipseIn: CGRect(x: fp.x - radius, y: fp.y - radius, width: radius * 2, height: radius * 2)),
             with: .radialGradient(
@@ -650,7 +742,7 @@ struct ContentView: View {
         )
     }
 
-    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double) {
+    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double) {
         let rect = CGRect(origin: .zero, size: size)
 
         // the depth: darker in the water's night, the way the sea
@@ -680,11 +772,14 @@ struct ContentView: View {
             )
         )
 
-        // two slow shafts of light, leaning with the tide
+        // two slow shafts of light, leaning with the tide — and
+        // trembling in the storm, the way light trembles under
+        // a moving cloud
         let tideNow = tide(t)
         for i in 0..<2 {
             let drift = sin(t * 0.05 + Double(i) * 1.9) * 8
                 + cos(tideNow.angle) * (2.0 + 5.0 * tideNow.strength) * 6
+                + sin(t * 2.6 + Double(i) * 2.2) * 3.0 * storm
             let x = size.width * (0.28 + 0.42 * Double(i)) + drift
             var shaft = context
             shaft.translateBy(x: x, y: -size.height * 0.15)
@@ -734,9 +829,41 @@ struct ContentView: View {
                 with: .color(.white.opacity(alpha))
             )
         }
+
+        // rain: what the storm brings down through the water — thin
+        // bright lines, falling fast, slanted by the wind the
+        // surging current makes. Where there is no storm there is no
+        // rain, and the water does not remember the rain either
+        if storm > 0.02 {
+            let rainSeed = 0x5241494E // "RAIN" in hex: the falling ones
+            let wind = tideFlow(t)
+            for i in 0..<44 {
+                let speed = 110 + 160 * Self.fuzz(rainSeed, 100 + i)
+                let cycle = size.height + 100
+                let progress = (t * speed + Double(i) * 7919.7).truncatingRemainder(dividingBy: cycle)
+                let y = -30 + progress
+                let fall = progress / speed
+                // the wind the current makes carries the fall
+                let x0 = Self.fuzz(rainSeed, i) * (size.width + 80) - 40
+                let x = x0 + wind.dx * fall * (0.5 + 0.5 * Self.fuzz(rainSeed, 200 + i))
+                let span = size.width + 80
+                var xx = (x + 40).truncatingRemainder(dividingBy: span) - 40
+                let len = 9 + 15 * Self.fuzz(rainSeed, 300 + i)
+                let slope = 2 * wind.dx / speed
+                // rain is seen where there is light to see it by:
+                // bright in the storm-darkened day, faint in the
+                // storm-darkened night, where the colony's own light
+                // is all there is
+                let alpha = (0.10 + 0.16 * Self.fuzz(rainSeed, 400 + i)) * storm * (0.35 + 0.65 * light)
+                var streak = Path()
+                streak.move(to: CGPoint(x: xx, y: y))
+                streak.addLine(to: CGPoint(x: xx + slope * len, y: y + len))
+                context.stroke(streak, with: .color(.white.opacity(alpha)), lineWidth: 1)
+            }
+        }
     }
 
-    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double) {
+    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double) {
         let seed = barnacle.seed
 
         // settling: born at its timestamp, eases in with a small overshoot
@@ -758,8 +885,15 @@ struct ContentView: View {
         let breathePhase = 2 * .pi * Self.fuzz(seed, 50)
         let driftPhase = 2 * .pi * Self.fuzz(seed, 51)
         let lean = 4.5 * tideNow.strength * (0.7 + 0.6 * Self.fuzz(seed, 56))
-        let swayX = sin(t * 0.35 + driftPhase) * 3 + cos(tideNow.angle) * lean
-        let swayY = cos(t * 0.27 + driftPhase * 1.31) * 3 + sin(tideNow.angle) * lean
+        var swayX = sin(t * 0.35 + driftPhase) * 3 + cos(tideNow.angle) * lean
+        var swayY = cos(t * 0.27 + driftPhase * 1.31) * 3 + sin(tideNow.angle) * lean
+        // the surge: in the storm the anchored bodies shudder with
+        // the water, each at its own rate
+        let shudder = 2.4 * storm
+        if shudder > 0.01 {
+            swayX += sin(t * (1.7 + 0.9 * Self.fuzz(seed, 58)) + driftPhase) * shudder
+            swayY += cos(t * (1.9 + 0.7 * Self.fuzz(seed, 59)) + driftPhase * 1.31) * shudder * 0.6
+        }
 
         // does the colony feel the current the hand has made? (0...1, eased by distance)
         var attention = 0.0
@@ -781,10 +915,11 @@ struct ContentView: View {
         // a barnacle that feels the current breathes a little deeper —
         // but a barnacle that has settled into the rock breathes
         // slower, and in the water's night the whole colony breathes
-        // shallow, the way sleepers breathe
+        // shallow, the way sleepers breathe, and in the storm the
+        // whole colony holds its breath
         let rest = 1 - light
         let breath = 1
-            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle) * (1 - 0.4 * rest)
+            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle) * (1 - 0.4 * rest) * (1 - 0.5 * storm)
             * sin(t * (0.7 * (1 - 0.35 * ageSettle)) + breathePhase)
 
         let center = CGPoint(
@@ -927,8 +1062,11 @@ struct ContentView: View {
         // taste everything; the old reach shorter, and fainter.
         let cirriThreshold = 0.04 + 0.10 * ageSettle
         let plumeBase = tideNow.angle + (Self.fuzz(seed, 55) * 0.5 - 0.25)
+        // the plumes fold in under the storm, the way a colony
+        // tucks in to weather
         var plumeReach = radius * (0.55 + 0.55 * tideNow.strength)
             * (0.7 + 0.5 * Self.fuzz(seed, 44)) * (1 - 0.35 * ageSettle) * (0.8 + 0.2 * light)
+            * (1 - 0.45 * storm)
         var plumeAngle = plumeBase
         var plumeVis = 0.14 + 0.10 * tideNow.strength
         if attention > cirriThreshold {
@@ -991,14 +1129,15 @@ struct ContentView: View {
     /// shell had been, and the pale surface exposed beneath. It holds
     /// for a while, then the water slowly forgets it. Unlike the living,
     /// a trace does not drift — it stays where the creature was.
-    private func drawGhost(_ context: inout GraphicsContext, _ ghost: Ghost, size: CGSize, now: Date, light: Double, fingerPoint: CGPoint?, presence: Double) {
+    private func drawGhost(_ context: inout GraphicsContext, _ ghost: Ghost, size: CGSize, now: Date, light: Double, storm: Double, fingerPoint: CGPoint?, presence: Double) {
         let age = now.timeIntervalSince(ghost.departedAt)
         guard age < 150 else { return }
         // the trace keeps, then dissolves — and in the water's night
         // the trace goes dark too, lit only where the hand's light
         // reaches it, the way a rock is lit by a lamp laid against
-        // it
-        let fade = 1 - Self.smoothstep(40, 150, age)
+        // it. The storm scours the water, and in it the water
+        // forgets faster
+        let fade = 1 - Self.smoothstep(40, 150 * (1 - 0.5 * storm), age)
         guard fade > 0.001 else { return }
 
         let center = CGPoint(x: ghost.x * size.width, y: ghost.y * size.height)

@@ -60,4 +60,108 @@ struct Fuzzy_BarnacleTests {
         #expect(ContentView.handFlashEnvelope(speed: 400, age: 0, light: 1) == 0, "in full daylight the stirring is not seen")
     }
 
+    // The storm: rare weather over the water. It comes only when
+    // two incommensurate currents align and the sky is willing, so
+    // the water is mostly calm. While it is here, the light from
+    // above is darkened under the cloud — and where the water is
+    // calm, nothing is changed at all.
+
+    @Test func theStormComesAndGoes() {
+        // forty-eight hours of the water's clock, second by second
+        var calmSeconds = 0
+        var windows = 0
+        var inWindow = false
+        for i in 0..<172800 {
+            let s = ContentView.storm(Double(i))
+            if s < 0.05 { calmSeconds += 1 }
+            if s > 0.5 {
+                if !inWindow {
+                    windows += 1
+                    inWindow = true
+                }
+            } else {
+                inWindow = false
+            }
+        }
+        #expect(calmSeconds > 150_000, "the water is mostly calm")
+        #expect(windows >= 10 && windows <= 60, "the storms are rare, and pass")
+    }
+
+    @Test func aFullStormDoesCome() {
+        // within two days the alignment and the season do meet,
+        // and the storm runs to its full strength
+        var hi = 0.0
+        for i in stride(from: 0, to: 172800, by: 2) {
+            hi = max(hi, ContentView.storm(Double(i)))
+        }
+        #expect(hi > 0.9, "a full storm does come")
+    }
+
+    @Test func theStormDarkensTheWater() {
+        // where the water is calm, the piece draws the plain day;
+        // where the storm runs to its full strength, the light is
+        // darkened under the cloud
+        #expect(ContentView.drawnLight(0) == ContentView.daylight(0), "a calm water is unchanged by the storm")
+        var hi = 0.0
+        var hiAt = 0.0
+        for i in stride(from: 0, to: 172800, by: 2) {
+            let s = ContentView.storm(Double(i))
+            if s > hi {
+                hi = s
+                hiAt = Double(i)
+            }
+        }
+        #expect(hi > 0.95, "within two days a storm runs to its full strength")
+        #expect(
+            ContentView.drawnLight(hiAt) <= ContentView.daylight(hiAt) * (1 - 0.35 * 0.95),
+            "at a storm's full strength the light is darkened under the cloud"
+        )
+    }
+
+    // The virtual clock: the piece can be launched with a shifted
+    // clock, so its time-dependent weather can be seen on demand
+    // without waiting for the real water's day.
+
+    @Test func theVirtualClockIsReadFromTheLaunchArguments() {
+        #expect(ContentView.virtualTimeOffset(from: ["Fuzzy Barnacle"]) == 0, "no argument, no shift")
+        #expect(ContentView.virtualTimeOffset(from: ["Fuzzy Barnacle", "-fb.virtualTimeOffset", "42"]) == 42, "a positive shift is read")
+        #expect(ContentView.virtualTimeOffset(from: ["Fuzzy Barnacle", "-fb.virtualTimeOffset", "-90000"]) == -90_000, "a negative shift is read")
+        #expect(ContentView.virtualTimeOffset(from: ["Fuzzy Barnacle", "-fb.virtualTimeOffset"]) == 0, "a dangling flag shifts nothing")
+        #expect(ContentView.virtualTimeOffset(from: ["Fuzzy Barnacle", "-fb.virtualTimeOffset", "not-a-number"]) == 0, "a numberless shift is nothing")
+    }
+
+    @Test func theShiftedClockFindsTheStormOnDemand() {
+        // a shift of the clock moves the water through its weather:
+        // from any moment there is a nearby moment under a full
+        // storm, and there is a nearby moment that is calm — so the
+        // weather can be tested in virtual time, not waited for
+        var hi = 0.0
+        var hiAt = 0.0
+        for i in stride(from: 0, to: 172800, by: 2) {
+            let s = ContentView.storm(Double(i))
+            if s > hi {
+                hi = s
+                hiAt = Double(i)
+            }
+        }
+        #expect(hi > 0.95, "within two days a storm runs to its full strength")
+        // the shift that lands a given moment on that peak
+        let now = 1_000_000.0
+        let offset = hiAt - now
+        #expect(ContentView.storm(now + offset) > 0.95, "the shifted clock reaches the storm")
+        #expect(
+            ContentView.drawnLight(now + offset) <= ContentView.daylight(now + offset) * (1 - 0.35 * 0.95),
+            "under the shifted sky the light is darkened"
+        )
+        // and a calm moment is just as close: the shift that lands
+        // on it leaves the water unchanged
+        var calmAt = 0.0
+        for i in stride(from: 0, to: 172800, by: 2) where ContentView.storm(Double(i)) < 0.02 {
+            calmAt = Double(i)
+            break
+        }
+        #expect(ContentView.storm(now + calmAt - now) < 0.02, "the shifted clock also reaches the calm")
+        #expect(ContentView.drawnLight(now + calmAt - now) == ContentView.daylight(now + calmAt - now), "and there the water is unchanged")
+    }
+
 }

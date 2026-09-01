@@ -3,6 +3,14 @@ import SwiftData
 
 @main
 struct Fuzzy_BarnacleApp: App {
+    init() {
+        // the piece's own clock: shifted by a launch argument when
+        // it is shifted, the way the water is shifted by nothing
+        ContentView.timeOffset = ContentView.virtualTimeOffset(
+            from: ProcessInfo.processInfo.arguments
+        )
+    }
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Barnacle.self,
