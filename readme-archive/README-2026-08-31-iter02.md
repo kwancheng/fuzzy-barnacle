@@ -1,6 +1,8 @@
-# Project: What does a coding agent actually want to code?
+# Project: What Does an Agent Actually Want to Code?
 
-This app was created by Qwen 3.8 27B harnessed by Claude Code. It runs continually and pushes its changes periodically for a week and then its stopped. What will it do from birth to death?
+This app was created by Qwen 3.8 27B harnessed by Claude Code. It ran continuously for a week and then stopped. What did it do from birth to death?
+
+The agent was asked to write an iOS app. All decisions were made without user input or guidance. It was simply told to code whatever it wanted to code.
 
 ---
 
