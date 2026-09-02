@@ -712,4 +712,96 @@ struct Fuzzy_BarnacleTests {
         #expect(twinMax < deepMax, "the smaller body's answer is the smaller one")
     }
 
+    // The storm finds the deep one: the sky's dark word and the
+    // deep's cold body, at the same time, in the same water. The
+    // storm is what the sky remembers of the water; the deep one is
+    // a body of its own. The two calendars are the sky's and the
+    // deep's, and they agree rarely — but they do agree, and where
+    // they agree the flood bends more around the stone, and the
+    // deep's light — the piece's first light that is not the
+    // sky's — is brightest of all under the sky's dark word,
+    // because it is not the sky's light.
+
+    @Test func thePartingSurgesWithTheStorm() {
+        // the water goes around the deep one's back the way a river
+        // goes around a stone — and a flood bends more: the
+        // storm's surge makes the water go around the body more,
+        // the way a storm's water goes around everything. Where
+        // there is no storm the parting is the parting as it always
+        // was
+        #expect(ContentView.deepPartingStrength(deep: 1, storm: 0) == 9.0, "where there is no storm the parting is the parting")
+        #expect(ContentView.deepPartingStrength(deep: 1, storm: 1) == 9.0 * 1.5, "at the storm's full the water goes around the body more")
+        #expect(
+            ContentView.deepPartingStrength(deep: 0.5, storm: 0.5) > ContentView.deepPartingStrength(deep: 0.5, storm: 0),
+            "the surge bends the water around the body more"
+        )
+        // the twin is the smaller body: the water turns around the
+        // smaller body less, the way its kind turns — and the
+        // storm's surge bends the water around it more, the way it
+        // bends the water around the larger body's
+        #expect(
+            ContentView.deepTwinPartingStrength(twin: 1, storm: 0) < ContentView.deepPartingStrength(deep: 1, storm: 0),
+            "the water turns around the smaller body less"
+        )
+        #expect(ContentView.deepTwinPartingStrength(twin: 1, storm: 1) == 7.0 * 1.5, "the storm's surge bends the water around the twin more still")
+    }
+
+    @Test func theStormFindsTheDeepOne() {
+        // the sky's dark word and the deep's body: the two
+        // calendars do not agree, the way the sky does not agree
+        // with the deep — but they do agree, rarely: over a year of
+        // the water's clock the storm is over the deep one for a
+        // small part of the time only, and the storm is over both
+        // bodies at once for a rarer still — a matter of seconds in
+        // a year
+        var pairSeconds = 0
+        var tripleSeconds = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            let s = ContentView.storm(t)
+            guard s > 0.5 else { continue }
+            let d = ContentView.deep(t)
+            guard d > 0.5 else { continue }
+            pairSeconds += 1
+            if ContentView.deepTwin(t) > 0.5 {
+                tripleSeconds += 1
+            }
+        }
+        #expect(pairSeconds > 10_000, "the storm does find the deep one — rarely, but it comes")
+        #expect(pairSeconds < 3_200_000, "the finding is a rare one: under a tenth of the water's year")
+        #expect(tripleSeconds > 0, "the sky's dark word does come over both of them — the rarest of times")
+        #expect(tripleSeconds < 100, "the dark word over both bodies is a matter of seconds in a year")
+    }
+
+    @Test func theStormsCloudBrightensTheDeepsLight() {
+        // the sky's dark word darkens the light from above — and
+        // the deep's light is not the sky's light: at every moment
+        // of storm in the water's night where a body of the deep is
+        // under the water, the deep's light is brighter under the
+        // sky's dark word than it would be were the word not there
+        // — the
+        // piece's first light that is not the sky's, brightest of
+        // all where the sky is darkest
+        var stormNightSeconds = 0
+        var brighterSeconds = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            let s = ContentView.storm(t)
+            guard s > 0.5 else { continue }
+            let d = ContentView.deep(t)
+            guard d > 0.3, ContentView.daylight(t) < 0.25 else { continue }
+            stormNightSeconds += 1
+            let underWord = ContentView.deepLight(deep: d, light: ContentView.drawnLight(t), t: t)
+            let wordLess = ContentView.deepLight(deep: d, light: ContentView.daylight(t), t: t)
+            if underWord > wordLess {
+                brighterSeconds += 1
+            }
+        }
+        #expect(stormNightSeconds > 0, "a storm in the water's night, where a body of the deep is under the water, does come")
+        #expect(
+            brighterSeconds == stormNightSeconds,
+            "at each of them the deep's light is brighter under the sky's dark word — it is not the sky's light"
+        )
+    }
+
 }

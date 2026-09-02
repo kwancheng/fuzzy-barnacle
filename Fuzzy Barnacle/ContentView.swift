@@ -77,7 +77,21 @@ import SwiftData
 /// from above is enough, and no answer is seen, the way the deep's
 /// lights are not seen in the sun, and when the passing ends the
 /// surface is the surface again, and does not remember the answer,
-/// the way it forgets everything.
+/// the way it forgets everything. And, rarely still, the sky's dark
+/// word finds the deep one: the storm is what the sky remembers of
+/// the water, and the deep one is a body of its own, and the two
+/// calendars are the sky's and the deep's, and they agree rarely —
+/// and where the storm is over the water and a body of the deep is
+/// under it, the water goes around the body's back more, the way a
+/// flood bends more around a stone, and the deep's small light —
+/// the piece's first light that is not the sky's — is brightest of
+/// all under the sky's dark word, because it is not the sky's
+/// light, and the rain falls on the answer, and the colony tucks in
+/// and slows its breath at the same time — and, rarely still, the
+/// sky's dark word is over both of them at once, a matter of
+/// seconds in a year — and when the storm passes and the passing
+/// ends, the water is the water again, and does not remember the
+/// meeting, the way it does not remember either of them.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -999,6 +1013,16 @@ struct ContentView: View {
         return 0.05 * deep
     }
 
+    /// How strongly the water goes around the deep one's back: the
+    /// parting the current makes around the body — and the storm's
+    /// surge makes the water go around it more, the way a flood
+    /// bends more around a stone: the water is chafing, and where a
+    /// body is in the water the water turns around it more. Where
+    /// there is no storm this is the parting as it always was.
+    static func deepPartingStrength(deep: Double, storm: Double) -> Double {
+        return 9.0 * deep * (1 + 0.5 * storm)
+    }
+
     /// The deep one's own small light: the piece's first light that
     /// is not the sky's. The light from above is the sky's, and it
     /// gives out in the deep, the way light gives out in the deep —
@@ -1007,7 +1031,13 @@ struct ContentView: View {
     /// body, in the water's night, breathing at the body's breath —
     /// the same slow breath that makes the body's tone, the way a
     /// large body breathes — and gone when the passing is gone, and
-    /// not remembered, the way everything is. And that same breath
+    /// not remembered, the way everything is. And the light is not
+    /// the sky's, so the sky's own dark word makes it brighter, not
+    /// fainter: under the storm's cloud the light from above goes
+    /// out more, and the deep's light comes up, the way the
+    /// water's own small lights come up under the cloud — the
+    /// piece's first light that is not the sky's, brightest of all
+    /// where the sky is darkest. And that same breath
     /// reaches a long way: it reaches up to the surface, where the
     /// water answers with a faint cold swell — the answer, made the
     /// way an answer is made: the water carries it, and the body
@@ -1124,6 +1154,15 @@ struct ContentView: View {
     /// sound — the piece's rarest sound.
     static func deepTwinGain(_ twin: Double) -> Double {
         return 0.05 * twin
+    }
+
+    /// How strongly the water goes around the twin's back: the
+    /// smaller body turns the water less, the way its kind turns —
+    /// and the storm's surge bends the water around it more, the
+    /// way the flood bends more around the stone, the way it bends
+    /// more around the larger body's.
+    static func deepTwinPartingStrength(twin: Double, storm: Double) -> Double {
+        return 7.0 * twin * (1 + 0.5 * storm)
     }
 
     /// The twin's own small light: the twin is a body of its own,
@@ -1630,11 +1669,14 @@ struct ContentView: View {
                 // the way it is bent out of the way of the hand —
                 // fainter: it is deep, and the water only turns
                 // around it a little; the larger body turns the
-                // water more, the smaller body less
+                // water more, the smaller body less — and the
+                // storm's surge bends the water around the back
+                // more still, the way a flood bends more around a
+                // stone
                 let parting = bodyParting(
                     CGPoint(x: xx, y: y),
                     center: deepCenter,
-                    strength: 9.0 * deep,
+                    strength: Self.deepPartingStrength(deep: deep, storm: storm),
                     sx: 0.30 * Double(size.width),
                     sy: 0.10 * Double(size.height)
                 )
@@ -1642,10 +1684,14 @@ struct ContentView: View {
                 y += parting.dy
             }
             if deepTwin > 0.02 {
+                // the twin's parting: the smaller body turns the
+                // water less — and the storm's surge bends the
+                // water around its back more still, the way the
+                // flood bends more around the smaller stone
                 let parting = bodyParting(
                     CGPoint(x: xx, y: y),
                     center: deepTwinCenter,
-                    strength: 7.0 * deepTwin,
+                    strength: Self.deepTwinPartingStrength(twin: deepTwin, storm: storm),
                     sx: 0.24 * Double(size.width),
                     sy: 0.08 * Double(size.height)
                 )
