@@ -45,9 +45,14 @@ import SwiftData
 /// under it, the way sleepers slow under a passing shadow — and
 /// under it all a low tone, one low tone, the way a single body
 /// makes a single sound: the piece's first voice that is not the
-/// water's. And when the passing ends, the water is the water
-/// again, and does not remember it, and the deep one does not
-/// remember the water either.
+/// water's. And in the water's night, where the light from above
+/// has given up, the deep one has a light of its own: the piece's
+/// first light that is not the sky's — a small cold one, made by
+/// the body, breathing at the body's breath, the colony above it
+/// lit from below by it, the way sleepers are lit by a lamp under
+/// them. And when the passing ends, the water is the water again,
+/// and does not remember it, and the deep one does not remember
+/// the water either.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -958,6 +963,27 @@ struct ContentView: View {
         return 0.05 * deep
     }
 
+    /// The deep one's own small light: the piece's first light that
+    /// is not the sky's. The light from above is the sky's, and it
+    /// gives out in the deep, the way light gives out in the deep —
+    /// but the deep one is a body of its own, and a body in the
+    /// dark has a light of its own: a small cold one, made by the
+    /// body, in the water's night, breathing at the body's breath —
+    /// the same slow breath that makes the body's tone, the way a
+    /// large body breathes — and gone when the passing is gone, and
+    /// not remembered, the way everything is.
+    static func deepLight(deep: Double, light: Double, t: Double) -> Double {
+        // the light shows where the light from above is gone: it is
+        // a night light, and a light under the storm's cloud, the
+        // way the water's own small lights are
+        let dark = 1 - light
+        // the body breathes, the way the body breathes — the same
+        // 37 s gain-breath that makes the body's tone in WaterVoice:
+        // one body, one breath, one voice, one light
+        let breath = 0.75 + 0.25 * sin(t * 2 * .pi / 37 + 1.2)
+        return 0.10 * deep * dark * breath
+    }
+
     /// The deep one, as the caption keeps it: it passes rarely, and
     /// while it is under the water the caption says so, the way the
     /// caption keeps the storm and the moon.
@@ -1400,9 +1426,14 @@ struct ContentView: View {
     /// its spine — a body long enough that its passing is a
     /// crossing of the water. In the day it is a shadow moving
     /// through the light; in the night it is a dark against the
-    /// colony's own small light; and where the moon's beam lies on
-    /// its back, the sky's light stops on the passing shadow. When
-    /// it passes, the water does not remember it.
+    /// colony's own small light — and in the water's night the deep
+    /// one carries a light of its own, the piece's first light that
+    /// is not the sky's: a small cold one, from within, the water
+    /// around the body lit and the body itself still dark, the way
+    /// a body is where its own light is; and
+    /// where the moon's beam lies on its back, the sky's light
+    /// stops on the passing shadow. When it passes, the water does
+    /// not remember it.
     private func drawDeep(_ context: inout GraphicsContext, size: CGSize, t: Double, deep: Double, deepCenter: CGPoint, light: Double, moon: Double, moonBeamX: Double) {
         let length = Self.deepBodyLength(width: size.width)
         // its heading: the way its crossing moves, its head leads —
@@ -1419,6 +1450,12 @@ struct ContentView: View {
         // plain in the day, a dark against the colony's own light
         // in the night
         let alpha = deep * (0.05 + 0.16 * light)
+        // the deep one's own small light: the piece's first light
+        // that is not the sky's — made by the body, in the night,
+        // breathing at the body's breath; in the full day the light
+        // from above is enough, and the deep's light is not seen
+        let dLight = Self.deepLight(deep: deep, light: light, t: t)
+        let glowColor = Color(red: 0.50, green: 0.80, blue: 0.95)
         // a soft dark body: ten along the spine, thinning toward
         // the head and the tail the way a body thins — and the
         // spine bends slowly, the way something of its size bends
@@ -1435,6 +1472,25 @@ struct ContentView: View {
             let halfH = halfW * 0.62
             let x = deepCenter.x + s * length * 0.5
             let y = deepCenter.y + bend * s
+            // the deep's own light, laid in the water around the
+            // body before the body's dark: the light is from
+            // within, so the water around the body is lit, and the
+            // body itself stays dark, the way a body is where its
+            // own light is
+            if dLight > 0.004 {
+                context.fill(
+                    Path(ellipseIn: CGRect(x: x - halfW * 3.0, y: y - halfH * 3.0, width: halfW * 6.0, height: halfH * 6.0)),
+                    with: .radialGradient(
+                        Gradient(colors: [
+                            glowColor.opacity(dLight * taper),
+                            .clear,
+                        ]),
+                        center: CGPoint(x: x, y: y),
+                        startRadius: 0,
+                        endRadius: halfW * 3.0
+                    )
+                )
+            }
             context.fill(
                 Path(ellipseIn: CGRect(x: x - halfW, y: y - halfH, width: halfW * 2, height: halfH * 2)),
                 with: .radialGradient(
@@ -1584,6 +1640,18 @@ struct ContentView: View {
             sigma: Self.moonBeamSigma(width: size.width)
         )
 
+        // the deep one's own light, where the deep one is passing
+        // under the water in the water's night: the colony above it
+        // is lit from below by the deep's small light — the light
+        // from within the deep, not from the sky, the way sleepers
+        // are lit by a lamp under them — and when the passing ends,
+        // the light goes with it, and the colony goes back to its
+        // own
+        let deepGlowLocal = Self.deepLight(deep: deep, light: light, t: t) * exp(
+            -(pow((Double(center.x) - Double(deepCenter.x)) / (0.30 * Double(size.width)), 2)
+                + pow((Double(center.y) - Double(deepCenter.y)) / (0.15 * Double(size.height)), 2)) / 2
+        )
+
         let shell = shellColor(seed: seed)
         let plate = plateColor(seed: seed)
         // with age the colour drains toward the rock it is becoming
@@ -1608,6 +1676,30 @@ struct ContentView: View {
                 endRadius: haloR
             )
         )
+
+        // the deep's own light, under the colony's own: where the
+        // deep one is passing below in the night, the sleepers are
+        // lit from below by the deep's small light — laid down
+        // first, the way the light that is lowest lies down first
+        if deepGlowLocal > 0.004 {
+            context.fill(
+                Path(ellipseIn: CGRect(
+                    x: center.x - haloR,
+                    y: center.y - haloR,
+                    width: haloR * 2,
+                    height: haloR * 2
+                )),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        Color(red: 0.50, green: 0.80, blue: 0.95).opacity(deepGlowLocal),
+                        .clear,
+                    ]),
+                    center: center,
+                    startRadius: radius * 0.1,
+                    endRadius: haloR
+                )
+            )
+        }
 
         // the self-light: in the water's night the colony is lit by
         // its own faint glow, and a moving hand stirs that glow

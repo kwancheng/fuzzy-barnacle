@@ -458,4 +458,57 @@ struct Fuzzy_BarnacleTests {
         #expect(quietSeconds > 150_000, "the deep one's tone is a rare one")
     }
 
+    // The deep one's own small light: the piece's first light
+    // that is not the sky's — made by the body, in the night,
+    // breathing at the body's breath, gone where the passing is
+    // gone. One body, one voice, one light.
+
+    @Test func theDeepOneHasItsOwnLight() {
+        #expect(ContentView.deepLight(deep: 0, light: 0, t: 0) == 0, "where there is no deep one there is no light of the deep")
+        #expect(ContentView.deepLight(deep: 1, light: 1, t: 0) == 0, "in the full day the deep's own light is not seen — the sky's light is enough")
+        let night = ContentView.deepLight(deep: 1, light: 0, t: 0)
+        #expect(night > 0.05 && night <= 0.10, "in the deep night the body carries its own small light")
+        // the deep's light is the deep's, not the sky's: fainter
+        // than the moon's beam at its full, the way the deep is
+        // fainter than the sky
+        #expect(night < 0.08 * 1.5, "the deep's light is a small one, not the sky's")
+    }
+
+    @Test func theDeepLightBreathesWithTheBody() {
+        // the light breathes at the body's breath — the same 37 s
+        // gain-breath that makes the body's tone, the way a large
+        // body breaths: it comes back with the breath, and it
+        // swells and eases within it
+        let a = ContentView.deepLight(deep: 1, light: 0, t: 1000)
+        let b = ContentView.deepLight(deep: 1, light: 0, t: 1000 + 37)
+        #expect(abs(a - b) < 0.000_001, "the light returns with the body's breath")
+        var lo = Double.greatestFiniteMagnitude
+        var hi = -Double.greatestFiniteMagnitude
+        for i in 0..<74 {
+            let v = ContentView.deepLight(deep: 1, light: 0, t: Double(i) * 0.5)
+            lo = min(lo, v)
+            hi = max(hi, v)
+        }
+        #expect(hi > lo * 1.2, "the light swells and eases at the body's breath")
+    }
+
+    @Test func theDeepLightIsARareOne() {
+        // over two days of the water's clock the deep's light is
+        // up for a small part of the time only: it is the
+        // passing's, and the passing is rare, and the light keeps
+        // to the night, the way the deep keeps
+        var litSeconds = 0
+        for i in 0..<172_800 {
+            if ContentView.deepLight(
+                deep: ContentView.deep(Double(i)),
+                light: ContentView.drawnLight(Double(i)),
+                t: Double(i)
+            ) > 0.02 {
+                litSeconds += 1
+            }
+        }
+        #expect(litSeconds > 0, "the deep's light does come up")
+        #expect(litSeconds < 3_000, "the deep's light is a rare one")
+    }
+
 }
