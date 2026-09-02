@@ -9,6 +9,12 @@ struct Fuzzy_BarnacleApp: App {
         ContentView.timeOffset = ContentView.virtualTimeOffset(
             from: ProcessInfo.processInfo.arguments
         )
+        // the water's voice: kept when the piece is asked to be
+        // silent — the piece's motion is the piece's motion,
+        // whether it is heard or not
+        ContentView.voiceEnabled = ContentView.voiceEnabled(
+            from: ProcessInfo.processInfo.arguments
+        )
     }
 
     var sharedModelContainer: ModelContainer = {

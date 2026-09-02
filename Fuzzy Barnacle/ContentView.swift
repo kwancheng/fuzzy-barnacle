@@ -62,7 +62,22 @@ import SwiftData
 /// way two large bodies breathing at once would sound, and when the
 /// passing ends, the lights go with them and the tones go with
 /// them, and the water is the water again, and does not remember
-/// any of it, the way it forgets everything.
+/// any of it, the way it forgets everything. And, while the bodies
+/// are under the water in the water's night, the surface answers
+/// their breath: the breath of a body that deep reaches a long
+/// way, and where it arrives at the surface the water answers with
+/// a faint cold swell — a small slow ripple no wind made, traveling
+/// at the water's pace and swelling at the body's breath, the water
+/// carrying the answer and the body breathing it — and the twin's
+/// answer keeps a little higher and a little fainter, at the twin's
+/// own breath, so that where the two are together, the piece's
+/// rarest moment, the surface carries two swells at once, each at
+/// its own breath: the rarest moment seen from above, the way the
+/// rarest sound is heard from below. And in the full day the light
+/// from above is enough, and no answer is seen, the way the deep's
+/// lights are not seen in the sun, and when the passing ends the
+/// surface is the surface again, and does not remember the answer,
+/// the way it forgets everything.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -992,7 +1007,11 @@ struct ContentView: View {
     /// body, in the water's night, breathing at the body's breath —
     /// the same slow breath that makes the body's tone, the way a
     /// large body breathes — and gone when the passing is gone, and
-    /// not remembered, the way everything is.
+    /// not remembered, the way everything is. And that same breath
+    /// reaches a long way: it reaches up to the surface, where the
+    /// water answers with a faint cold swell — the answer, made the
+    /// way an answer is made: the water carries it, and the body
+    /// breathes it.
     static func deepLight(deep: Double, light: Double, t: Double) -> Double {
         // the light shows where the light from above is gone: it is
         // a night light, and a light under the storm's cloud, the
@@ -1003,6 +1022,25 @@ struct ContentView: View {
         // one body, one breath, one voice, one light
         let breath = 0.75 + 0.25 * sin(t * 2 * .pi / 37 + 1.2)
         return 0.10 * deep * dark * breath
+    }
+
+    /// The surface's answer to the deep one's breath: the body
+    /// breathes, the way a large body breathes — the same slow 37 s
+    /// breath that makes the body's tone and the body's light — and
+    /// a breath that deep reaches a long way: it reaches up through
+    /// the water to the surface, and where it arrives the water
+    /// answers with a faint cold swell. The answer is the body's
+    /// light reaching the surface: the same light, spread thin by
+    /// the distance it has traveled, the way an echo is thinner than
+    /// the voice that made it. It is made of the body's presence and
+    /// the water's night, it travels at the water's pace, and it is
+    /// gone when the passing is gone — and the water does not
+    /// remember it, the way it forgets everything. One body, one
+    /// breath, one voice, one light, one answer.
+    static func deepAnswer(deep: Double, light: Double, t: Double) -> Double {
+        // the answer is the light's reaching the surface: the same
+        // breath, spread thin by the way it has traveled
+        return Self.deepLight(deep: deep, light: light, t: t) * 0.6
     }
 
     /// The deep one, as the caption keeps it: it passes rarely, and
@@ -1094,7 +1132,10 @@ struct ContentView: View {
     /// the smaller body, in the water's night, breathing at the
     /// twin's own breath — a breath the deep one does not keep,
     /// the way the two bodies keep their own. One body, one voice,
-    /// one light, for each of them.
+    /// one light, for each of them. And that breath reaches the
+    /// surface too, where the water answers it at the twin's own
+    /// pace — the fainter of the two answers, keeping a little
+    /// higher in the water, the way the twin keeps.
     static func deepTwinLight(twin: Double, light: Double, t: Double) -> Double {
         // the light shows where the light from above is gone, the
         // way the deep one's does
@@ -1104,6 +1145,20 @@ struct ContentView: View {
         // the way two bodies do
         let breath = 0.75 + 0.25 * sin(t * 2 * .pi / 41 + 3.9)
         return 0.08 * twin * dark * breath
+    }
+
+    /// The twin's answer: the surface answers the twin's breath the
+    /// same way it answers the deep one's — but a fainter, less
+    /// blue swell, keeping a little higher in the water, the way
+    /// the twin keeps a little higher, and breathing at the twin's
+    /// own breath, the 41 s, not the deep one's 37: the two
+    /// answers keep their own breaths, the way the two bodies do.
+    /// And where the two are together — the piece's rarest moment —
+    /// the surface carries two swells at once, each at its own
+    /// breath: the rarest moment seen from above, the way the
+    /// rarest sound is heard from below.
+    static func deepTwinAnswer(twin: Double, light: Double, t: Double) -> Double {
+        return Self.deepTwinLight(twin: twin, light: light, t: t) * 0.6
     }
 
     // MARK: - The Wake
@@ -1238,6 +1293,19 @@ struct ContentView: View {
         guard let i = arguments.firstIndex(of: "-fb.virtualTimeOffset") else { return 0 }
         guard i + 1 < arguments.count, let value = Double(arguments[i + 1]) else { return 0 }
         return value
+    }
+
+    /// The water's voice can be kept, for testing and for a room
+    /// that wants quiet: `-fb.noVoice`. The water does not speak,
+    /// and is no less the water for it — the piece's motion is the
+    /// piece's motion, whether it is heard or not.
+    static var voiceEnabled: Bool = true
+
+    /// Whether the launch arguments ask for the water's silence:
+    /// `-fb.noVoice` keeps the piece's voice, the way a held breath
+    /// is still a breath.
+    static func voiceEnabled(from arguments: [String]) -> Bool {
+        return !arguments.contains("-fb.noVoice")
     }
 
     // MARK: - Drawing
@@ -1406,6 +1474,42 @@ struct ContentView: View {
                     startPoint: .zero,
                     endPoint: CGPoint(x: 0, y: shaftRect.height)
                 )
+            )
+        }
+
+        // the answer: while a body of the deep is under the water
+        // in the water's night, the surface answers its breath — a
+        // faint cold swell, traveling at the water's pace,
+        // swelling and easing at the body's breath. The deep one's
+        // answer keeps the lower part of the surface; the twin's —
+        // a little fainter, a little less blue — keeps a little
+        // higher, the way the twin keeps a little higher in the
+        // water. And in the full day the light from above is
+        // enough, and neither answer is seen
+        if deep > 0.01 {
+            drawAnswer(
+                &context,
+                size: size,
+                t: t,
+                surfaceY: 0.075 * Double(size.height),
+                answer: Self.deepAnswer(deep: deep, light: light, t: t),
+                maxAnswer: 0.06,
+                color: Color(red: 0.50, green: 0.80, blue: 0.95),
+                wavelengthFrac: 0.35,
+                period: 420
+            )
+        }
+        if deepTwin > 0.01 {
+            drawAnswer(
+                &context,
+                size: size,
+                t: t,
+                surfaceY: 0.045 * Double(size.height),
+                answer: Self.deepTwinAnswer(twin: deepTwin, light: light, t: t),
+                maxAnswer: 0.048,
+                color: Color(red: 0.62, green: 0.78, blue: 0.92),
+                wavelengthFrac: 0.30,
+                period: 470
             )
         }
 
@@ -1723,6 +1827,74 @@ struct ContentView: View {
                     )
                 )
             }
+        }
+    }
+
+    /// The answer, drawn: a faint cold swell at the water's
+    /// surface, while a body of the deep is under the water in the
+    /// water's night — the band of light where the body's breath
+    /// arrives, and the small slow ripples it makes, the way a
+    /// swell moves. The ripples travel at the water's pace, and
+    /// they swell and ease at the body's breath: the water carries
+    /// the answer, and the body breathes it. In the full day the
+    /// light from above is enough, and the answer is not seen, the
+    /// way the deep's light is not seen in the sun.
+    private func drawAnswer(
+        _ context: inout GraphicsContext,
+        size: CGSize,
+        t: Double,
+        surfaceY: Double,
+        answer: Double,
+        maxAnswer: Double,
+        color: Color,
+        wavelengthFrac: Double,
+        period: Double
+    ) {
+        guard answer > 0.004 else { return }
+        let w = Double(size.width)
+        // the answer swells and eases at the body's breath; it
+        // travels at the water's pace — the water carries it, and
+        // the body breathes it
+        let strength = min(1, answer / maxAnswer)
+        let amp = 5.5 * strength
+        // the band: the breath's arrival at the surface — a faint
+        // cold light laid across the whole of it, the way the
+        // breath is of the whole water, not of a place in it
+        context.fill(
+            Path(CGRect(x: 0, y: surfaceY - 13, width: size.width, height: 26)),
+            with: .linearGradient(
+                Gradient(colors: [
+                    .clear,
+                    color.opacity(0.8 * answer),
+                    .clear,
+                ]),
+                startPoint: CGPoint(x: 0, y: surfaceY - 13),
+                endPoint: CGPoint(x: 0, y: surfaceY + 13)
+            )
+        )
+        // the ripples: three of them, each at its own phase, the
+        // way no two crests of a swell are in phase — and each
+        // traveling at the water's pace, slowly, the way a swell
+        // travels
+        for i in 0..<3 {
+            let offset = (Double(i) - 1) * 3.5
+            let phase0 = Double(i) * 1.13
+            var ripple = Path()
+            var first = true
+            var x = -8.0
+            while x <= w + 8 {
+                let y = surfaceY + offset + amp * sin(2 * .pi * (x / (w * wavelengthFrac) - t / period) + phase0)
+                let p = CGPoint(x: x, y: y)
+                if first {
+                    ripple.move(to: p)
+                    first = false
+                } else {
+                    ripple.addLine(to: p)
+                }
+                x += 6
+            }
+            let alpha = (i == 1 ? 0.85 : 0.45) * 1.6 * answer
+            context.stroke(ripple, with: .color(color.opacity(alpha)), lineWidth: 1.2)
         }
     }
 

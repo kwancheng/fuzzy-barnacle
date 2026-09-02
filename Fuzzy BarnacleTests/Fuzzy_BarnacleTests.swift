@@ -638,4 +638,78 @@ struct Fuzzy_BarnacleTests {
         #expect(abs(a - b) < 0.000_001, "the twin's light returns with the twin's own breath")
     }
 
+    @Test func thePieceCanRunWithoutAVoice() {
+        // the water's voice can be kept: by default the water
+        // speaks, and `-fb.noVoice` keeps it — the piece's motion
+        // is the piece's motion, whether it is heard or not
+        #expect(ContentView.voiceEnabled(from: ["Fuzzy Barnacle"]) == true, "by default the water speaks")
+        #expect(ContentView.voiceEnabled(from: ["Fuzzy Barnacle", "-fb.noVoice"]) == false, "`-fb.noVoice` keeps the piece's voice")
+        #expect(ContentView.voiceEnabled(from: ["Fuzzy Barnacle", "-fb.virtualTimeOffset", "10", "-fb.noVoice"]) == false, "the silence holds alongside the shifted clock")
+    }
+
+    // The answer: while a body of the deep is under the water in
+    // the water's night, its breath reaches the surface, and the
+    // water answers with a faint cold swell — the body's light
+    // reaching the surface, spread thin by the way it has traveled.
+
+    @Test func theSurfaceAnswersTheDeepBreath() {
+        // where there is no body there is no answer, and in the
+        // full day the answer is not seen, the way the deep's light
+        // is not seen in the sun — and the answer is thinner than
+        // the light: the breath has traveled a long way, and an
+        // answer is thinner than the voice that made it
+        #expect(ContentView.deepAnswer(deep: 0, light: 0, t: 0) == 0, "where there is no deep one there is no answer")
+        #expect(ContentView.deepAnswer(deep: 1, light: 1, t: 0) == 0, "in the full day the answer is not seen — the light from above is enough")
+        let night = ContentView.deepAnswer(deep: 1, light: 0, t: 0)
+        #expect(night > 0, "in the deep night the surface answers the body's breath")
+        #expect(night < ContentView.deepLight(deep: 1, light: 0, t: 0), "the answer is thinner than the light — the breath has traveled a long way")
+    }
+
+    @Test func theAnswerKeepsTheBodysBreath() {
+        // the answer swells and eases at the body's own breath —
+        // the same 37 s breath that makes the body's light and the
+        // body's tone: it returns with the breath, and it swells
+        // and eases within it, the way a breath does
+        let a = ContentView.deepAnswer(deep: 1, light: 0, t: 500)
+        let b = ContentView.deepAnswer(deep: 1, light: 0, t: 500 + 37)
+        #expect(abs(a - b) < 0.000_001, "the answer returns with the body's 37 s breath")
+        var lo = Double.greatestFiniteMagnitude
+        var hi = -Double.greatestFiniteMagnitude
+        for i in 0..<74 {
+            let v = ContentView.deepAnswer(deep: 1, light: 0, t: Double(i) * 0.5)
+            lo = min(lo, v)
+            hi = max(hi, v)
+        }
+        #expect(hi > lo * 1.2, "the answer swells and eases, the way a breath does")
+    }
+
+    @Test func theTwinAnswersAtItsOwnBreath() {
+        // the twin's answer keeps the twin's own breath, not the
+        // deep one's: the two answers keep their own breaths, the
+        // way the two bodies do — and the smaller body's answer is
+        // the smaller one
+        #expect(ContentView.deepTwinAnswer(twin: 0, light: 0, t: 0) == 0, "where there is no twin there is no answer")
+        #expect(ContentView.deepTwinAnswer(twin: 1, light: 1, t: 0) == 0, "in the full day the twin's answer is not seen")
+        let a = ContentView.deepTwinAnswer(twin: 1, light: 0, t: 500)
+        let b = ContentView.deepTwinAnswer(twin: 1, light: 0, t: 500 + 41)
+        #expect(abs(a - b) < 0.000_001, "the twin's answer returns with the twin's own 41 s breath")
+        var dMax = 0.0
+        for i in 0..<74 {
+            dMax = max(dMax, abs(ContentView.deepAnswer(deep: 1, light: 0, t: Double(i)) - ContentView.deepAnswer(deep: 1, light: 0, t: Double(i) + 41)))
+        }
+        #expect(dMax > 0.005, "the deep one's answer does not keep the twin's breath")
+        var tMax = 0.0
+        for i in 0..<82 {
+            tMax = max(tMax, abs(ContentView.deepTwinAnswer(twin: 1, light: 0, t: Double(i)) - ContentView.deepTwinAnswer(twin: 1, light: 0, t: Double(i) + 37)))
+        }
+        #expect(tMax > 0.005, "the twin's answer does not keep the deep one's breath")
+        var deepMax = 0.0
+        var twinMax = 0.0
+        for i in 0..<82 {
+            deepMax = max(deepMax, ContentView.deepAnswer(deep: 1, light: 0, t: Double(i)))
+            twinMax = max(twinMax, ContentView.deepTwinAnswer(twin: 1, light: 0, t: Double(i)))
+        }
+        #expect(twinMax < deepMax, "the smaller body's answer is the smaller one")
+    }
+
 }

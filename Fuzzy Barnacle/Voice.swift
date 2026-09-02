@@ -192,6 +192,14 @@ final class WaterVoice: ObservableObject {
             voiceLock.unlock()
             return
         }
+        // the water can be told to keep its voice: the piece's
+        // motion is the piece's motion, whether it is heard or
+        // not — and a room that wants quiet is a room that wants
+        // quiet
+        guard ContentView.voiceEnabled else {
+            voiceLock.unlock()
+            return
+        }
         started = true
         voiceLock.unlock()
         Task.detached(priority: .utility) { [weak self] in
