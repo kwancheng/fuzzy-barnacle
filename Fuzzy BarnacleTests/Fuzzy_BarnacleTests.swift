@@ -511,4 +511,131 @@ struct Fuzzy_BarnacleTests {
         #expect(litSeconds < 3_000, "the deep's light is a rare one")
     }
 
+    // The deep one's twin: the piece's rarest moment. The twin
+    // comes the way the deep one comes — on its own currents and
+    // its own season, calendars the deep one does not keep — so it
+    // is rarely there, and the deep one is rarely there, and the
+    // two are rarely there together, the way the deep does not
+    // agree with the sky. The twin keeps a little higher in the
+    // water, and is the smaller of the two, and it has a voice of
+    // its own, a little above the deep one's, and a light of its
+    // own, the fainter, less blue of the two — one body, one
+    // voice, one light, for each of them.
+
+    @Test func theDeepOneHasATwin() {
+        // forty-eight hours of the water's clock: the twin comes
+        // the way the deep one comes — rarely, on its own
+        // calendar — and it does not come more often than the deep
+        // one does, the way its kind keeps
+        var calmSeconds = 0
+        var twinWindows = 0
+        var inWindow = false
+        var deepWindows = 0
+        var inDeep = false
+        for i in 0..<172_800 {
+            let tw = ContentView.deepTwin(Double(i))
+            if tw < 0.05 { calmSeconds += 1 }
+            if tw > 0.3 {
+                if !inWindow {
+                    twinWindows += 1
+                    inWindow = true
+                }
+            } else {
+                inWindow = false
+            }
+            let d = ContentView.deep(Double(i))
+            if d > 0.3 {
+                if !inDeep {
+                    deepWindows += 1
+                    inDeep = true
+                }
+            } else {
+                inDeep = false
+            }
+        }
+        #expect(calmSeconds > 150_000, "the water is mostly without its twin")
+        #expect(twinWindows >= 4, "the twin comes, the way the deep one comes")
+        #expect(twinWindows < deepWindows + 2, "the twin does not come more often than the deep one")
+    }
+
+    @Test func theTwoBodiesBarelyMeet() {
+        // the piece's rarest moment: the deep one is rarely there,
+        // and the twin is rarely there, and the two are rarely
+        // there together — over thirty days of the water's clock
+        // the two are together for a small part of the time only,
+        // the way the deep does not agree with the sky
+        var bothSeconds = 0
+        for i in stride(from: 0, to: 2_592_000, by: 1) {
+            if ContentView.deep(Double(i)) > 0.3 && ContentView.deepTwin(Double(i)) > 0.3 {
+                bothSeconds += 1
+            }
+        }
+        #expect(bothSeconds > 0, "the two are together sometimes — the rarest of times")
+        #expect(bothSeconds < 2_500, "the two are together rarely: under one part in a thousand of the water's days")
+    }
+
+    @Test func aTwinPassingDoesCome() {
+        // within two days the twin's alignment and its season do
+        // meet, and the passing runs to its full
+        var hi = 0.0
+        for i in stride(from: 0, to: 172_800, by: 2) {
+            hi = max(hi, ContentView.deepTwin(Double(i)))
+        }
+        #expect(hi > 0.85, "a full twin passing does come")
+    }
+
+    @Test func theTwinKeepsToTheDeep() {
+        // the twin keeps to the deep the way the deep one keeps —
+        // and a little higher in the water, the way its kind
+        // keeps — and its crossing is a drifting: it enters from
+        // one side of the water and leaves by the other
+        var lo = Double.greatestFiniteMagnitude
+        var hi = -Double.greatestFiniteMagnitude
+        for i in stride(from: 0, to: 172_800, by: 5) {
+            let x = ContentView.deepTwinX(Double(i), width: 430)
+            lo = min(lo, x)
+            hi = max(hi, x)
+        }
+        #expect(lo < 0 && hi > 430, "the twin enters from one side of the water and leaves by the other")
+        for i in stride(from: 0, to: 172_800, by: 30) {
+            let y = ContentView.deepTwinY(Double(i), height: 928)
+            #expect(y > 0.6 * 928 && y < 0.8 * 928, "the twin keeps to the deep")
+        }
+    }
+
+    @Test func theTwinHasOneVoice() {
+        // the twin's voice is the twin's, not the water's: where
+        // there is no twin there is no tone of the twin, and the
+        // tone is a low one — quieter than the weather's voice —
+        // and the piece is mostly without it
+        #expect(ContentView.deepTwinGain(0) == 0, "where there is no twin there is no tone of the twin")
+        #expect(
+            ContentView.deepTwinGain(1) < ContentView.rainGain(storm: 1, light: 1),
+            "the twin's voice is a low one, quieter than the weather's"
+        )
+        var quietSeconds = 0
+        for i in 0..<172_800 {
+            if ContentView.deepTwinGain(ContentView.deepTwin(Double(i))) < 0.01 {
+                quietSeconds += 1
+            }
+        }
+        #expect(quietSeconds > 150_000, "the twin's tone is a rare one")
+    }
+
+    @Test func theTwinHasItsOwnLight() {
+        // the twin's light is the twin's: where there is no twin
+        // there is no light of the twin, and in the full day the
+        // twin's light is not seen, the way the deep one's is not.
+        // And the twin's light is the smaller of the two — the
+        // smaller body makes the smaller light — and it breathes
+        // at the twin's own breath, not the deep one's
+        #expect(ContentView.deepTwinLight(twin: 0, light: 0, t: 0) == 0, "where there is no twin there is no light of the twin")
+        #expect(ContentView.deepTwinLight(twin: 1, light: 1, t: 0) == 0, "in the full day the twin's own light is not seen")
+        let night = ContentView.deepTwinLight(twin: 1, light: 0, t: 0)
+        #expect(night > 0 && night < ContentView.deepLight(deep: 1, light: 0, t: 0), "the twin's light is the smaller of the two — the smaller body makes the smaller light")
+        let a = ContentView.deepTwinLight(twin: 1, light: 0, t: 1000)
+        let b = ContentView.deepTwinLight(twin: 1, light: 0, t: 1000 + 41)
+        #expect(abs(a - b) < 0.000_001, "the twin's light returns with the twin's own breath")
+    }
+
 }

@@ -26,8 +26,15 @@ import os.log
 /// deep one is a body of its own, and a body has a voice of its
 /// own: one low tone under the water, the way a single body makes
 /// a single sound — the colony's closing is eight small voices,
-/// and the deep one is one. And when the passing ends, the tone
-/// goes with it, and the water does not remember it.
+/// and the deep one is one. And the deep one's twin, when it
+/// passes — rarely, and more rarely still together with the deep
+/// one — carries a tone of its own, a little above the deep
+/// one's, the way a lesser body's voice sits a little above a
+/// larger body's: and where the two bodies are together, the two
+/// tones beat against each other, three swells a second, the way
+/// two large bodies breathing at once would sound — the piece's
+/// rarest sound. And when the passing ends, the tones go with
+/// them, and the water does not remember them.
 ///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
@@ -54,6 +61,7 @@ final class WaterVoice: ObservableObject {
     private var glintTarget: Double = 0
     private var swishTarget: Double = 0
     private var deepTarget: Double = 0
+    private var twinTarget: Double = 0
     private var cutoffTarget: Double = 500
 
     // The render state, touched only on the audio thread.
@@ -108,6 +116,14 @@ final class WaterVoice: ObservableObject {
     private var deepPhase: Double = 0
     private var deepToneGain: Double = 0
     private var deepSampleClock: Double = 0
+
+    // The twin's voice: its own low tone, a little above the deep
+    // one's — the twin breathes at its own breath, the way the
+    // twin keeps its own light, and where the two bodies are
+    // together the two tones beat against each other, the way two
+    // large bodies breathing at once would sound
+    private var twinPhase: Double = 0
+    private var twinToneGain: Double = 0
 
     /// The voice's own draw: a unit random, the way the water draws
     /// its motes
@@ -242,10 +258,13 @@ final class WaterVoice: ObservableObject {
     /// the moon's light lies on the moving water, the swish where
     /// the hand has been (the water's answer, heard), the low tone
     /// under the water where the deep one passes (a body's voice,
-    /// the piece's first that is not the water's), and how low the
-    /// voice should sit (lower, in the water's night). The voice
-    /// eases toward each of them, the way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, cutoff: Double) {
+    /// the piece's first that is not the water's), and the twin's
+    /// tone, a little above it (its body's voice — and where the
+    /// two are together, the two tones beat, the piece's rarest
+    /// sound), and how low the voice should sit (lower, in the
+    /// water's night). The voice eases toward each of them, the
+    /// way water eases.
+    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
@@ -253,18 +272,19 @@ final class WaterVoice: ObservableObject {
         glintTarget = glint
         swishTarget = swish
         deepTarget = deep
+        twinTarget = twin
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + tuck + glint + swish + deep > 0.03
+        let isSpeaking = murmur + rain + tuck + glint + swish + deep + twin > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, glintTarget, swishTarget, deepTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, glintTarget, swishTarget, deepTarget, twinTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -358,6 +378,10 @@ final class WaterVoice: ObservableObject {
             // water's voices are the water's motion; this one is a
             // body's motion
             deepSampleClock += 1
+            // the deep one's tone: 55 Hz, breathing at the deep
+            // one's breath — the 37 s gain-breath, the same breath
+            // that makes the deep one's light: one body, one
+            // breath, one voice, one light
             deepPhase += 2 * .pi * 55.0 * (
                 1 + 0.06 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 29) + 0.4)
             ) / Double(format.sampleRate)
@@ -366,11 +390,29 @@ final class WaterVoice: ObservableObject {
             let deepTone = sin(deepPhase)
                 * deepToneGain * 1.6
                 * (0.75 + 0.25 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 37) + 1.2))
+            // the twin's tone: 58 Hz — a little above the deep
+            // one's, the way a lesser body's voice sits a little
+            // above a larger body's — breathing at the twin's own
+            // breath, the 41 s gain-breath, the same breath that
+            // makes the twin's light: one body, one breath, one
+            // voice, one light, for each of them. Where the two
+            // bodies are together, the two tones beat against
+            // each other — no beating is made; it comes of two
+            // voices at once, the way it comes of two bodies at
+            // once
+            twinPhase += 2 * .pi * 58.0 * (
+                1 + 0.06 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 31) + 2.1)
+            ) / Double(format.sampleRate)
+            if twinPhase >= 4 * .pi { twinPhase -= 4 * .pi }
+            twinToneGain += (target.twin - twinToneGain) * 0.0008
+            let twinTone = sin(twinPhase)
+                * twinToneGain * 1.6
+                * (0.75 + 0.25 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 41) + 3.9))
             // the voice eases toward what the water is doing, the
             // way water eases: the murmur slowly, the rain at the
             // storm's pace, the colony tucks in slowly, the sky
-            // glints slowly, the deep one's tone slowly still, and
-            // the swish at the hand's
+            // glints slowly, the deep one's tone and the twin's
+            // tone slowly still, and the swish at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
             tuckGain += (target.tuck - tuckGain) * 0.004
@@ -382,6 +424,7 @@ final class WaterVoice: ObservableObject {
                 + glintSum * glintGain * 1.2
                 + swishHiss * swishGain
                 + deepTone
+                + twinTone
             // a soft edge, the way the water has soft edges
             out = tanh(out * 1.4) / tanh(1.4)
             samples[frame] = Float(out)
@@ -391,7 +434,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, glint %f, deep %f)", level, tuckGain, glintGain, deepToneGain)
+            os_log("fb voice: level %f (tuck %f, glint %f, deep %f, twin %f)", level, tuckGain, glintGain, deepToneGain, twinToneGain)
         }
     }
 }
