@@ -360,4 +360,102 @@ struct Fuzzy_BarnacleTests {
         )
     }
 
+    // The deep one: a body in the water's depths. It comes the way
+    // the storm and the moon come, only rarer still — two
+    // incommensurate currents must align, and the deep season,
+    // which turns slower than the sky's, must be willing. While it
+    // is here it drifts across the depths, entering from one side
+    // of the water and leaving by the other; and it has a voice of
+    // its own — one low tone, the way a single body makes a single
+    // sound — the piece's first voice that is not the water's.
+
+    @Test func theDeepOneIsRare() {
+        // forty-eight hours of the water's clock: the water is
+        // mostly calm, and the deep ones are rarer still than the
+        // moon's crossings — the deep one is the piece's least
+        // frequent guest
+        var calmSeconds = 0
+        var deepWindows = 0
+        var inWindow = false
+        var moonWindows = 0
+        var inMoon = false
+        for i in 0..<172_800 {
+            let t = Double(i)
+            let d = ContentView.deep(t)
+            let m = ContentView.moonDrawn(t)
+            if d < 0.05 { calmSeconds += 1 }
+            if d > 0.3 {
+                if !inWindow {
+                    deepWindows += 1
+                    inWindow = true
+                }
+            } else {
+                inWindow = false
+            }
+            if m > 0.3 {
+                if !inMoon {
+                    moonWindows += 1
+                    inMoon = true
+                }
+            } else {
+                inMoon = false
+            }
+        }
+        #expect(calmSeconds > 150_000, "the water is mostly calm, and mostly without a deep one")
+        #expect(deepWindows >= 4 && deepWindows < moonWindows, "the deep one comes, and it comes rarer than the moon")
+    }
+
+    @Test func aDeepPassingDoesCome() {
+        // within two days the alignment and the deep season do
+        // meet, and the passing runs to its full
+        var hi = 0.0
+        for i in stride(from: 0, to: 172_800, by: 2) {
+            hi = max(hi, ContentView.deep(Double(i)))
+        }
+        #expect(hi > 0.85, "a full passing does come")
+    }
+
+    @Test func theDeepOneDriftsAcrossTheWater() {
+        // while the deep one is under the water, its crossing
+        // moves: it enters from one side of the water and leaves
+        // by the other — and it keeps to the deep, the way the
+        // deep keeps
+        var lo = Double.greatestFiniteMagnitude
+        var hi = -Double.greatestFiniteMagnitude
+        var seen = 0
+        for i in 0..<172_800 {
+            if ContentView.deep(Double(i)) > 0.3 {
+                let x = ContentView.deepX(Double(i), width: 430)
+                lo = min(lo, x)
+                hi = max(hi, x)
+                seen += 1
+            }
+        }
+        #expect(seen > 0, "the deep one is under the water sometimes")
+        #expect(lo < 0 && hi > 430, "it enters from one side of the water and leaves by the other")
+        for i in stride(from: 0, to: 172_800, by: 30) {
+            let y = ContentView.deepY(Double(i), height: 928)
+            #expect(y > 0.7 * 928 && y < 0.9 * 928, "the deep one keeps to the deep")
+        }
+    }
+
+    @Test func theDeepOneHasOneVoice() {
+        // the deep one's voice is the deep one's, not the
+        // water's: where there is no passing there is no tone,
+        // and the tone is a low one — quieter than the
+        // weather's voice — and the piece is mostly without it
+        #expect(ContentView.deepGain(0) == 0, "where there is no deep one there is no tone")
+        #expect(
+            ContentView.deepGain(1) < ContentView.rainGain(storm: 1, light: 1),
+            "the deep one's voice is a low one, quieter than the weather's"
+        )
+        var quietSeconds = 0
+        for i in 0..<172_800 {
+            if ContentView.deepGain(ContentView.deep(Double(i))) < 0.01 {
+                quietSeconds += 1
+            }
+        }
+        #expect(quietSeconds > 150_000, "the deep one's tone is a rare one")
+    }
+
 }

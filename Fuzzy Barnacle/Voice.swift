@@ -18,7 +18,16 @@ import os.log
 /// moving water, the water glints: small and high and sparse, the
 /// way a glint is — the sky's voice on the water, and when the
 /// crossing passes, the sky is silent again, the way the sky is
-/// silent most of the time.
+/// silent most of the time. And the deep one, when it passes
+/// under the water, makes the piece's first voice that is not the
+/// water's: the water's voices are the water's motion — the
+/// murmur, the rain, the swish — and the granular voices of the
+/// populations — the colony's closing, the sky's glint. But the
+/// deep one is a body of its own, and a body has a voice of its
+/// own: one low tone under the water, the way a single body makes
+/// a single sound — the colony's closing is eight small voices,
+/// and the deep one is one. And when the passing ends, the tone
+/// goes with it, and the water does not remember it.
 ///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
@@ -44,6 +53,7 @@ final class WaterVoice: ObservableObject {
     private var tuckTarget: Double = 0
     private var glintTarget: Double = 0
     private var swishTarget: Double = 0
+    private var deepTarget: Double = 0
     private var cutoffTarget: Double = 500
 
     // The render state, touched only on the audio thread.
@@ -88,6 +98,16 @@ final class WaterVoice: ObservableObject {
     }
     private var glinters: [Glinter] = []
     private var glintGain: Double = 0
+
+    // The deep one's voice: the piece's first voice that is not
+    // the water's — the water's voices are made of the water's
+    // motion; the deep one is a body, and a body has a voice of
+    // its own: one low tone, the way a single body makes a single
+    // sound. The colony's closing is eight small voices, each at
+    // its own pace; the deep one is one voice, at its own breath.
+    private var deepPhase: Double = 0
+    private var deepToneGain: Double = 0
+    private var deepSampleClock: Double = 0
 
     /// The voice's own draw: a unit random, the way the water draws
     /// its motes
@@ -220,28 +240,31 @@ final class WaterVoice: ObservableObject {
     /// water (the rain), the closing of the colony's shells where
     /// the storm tucks the colony in (the tuck), the glint where
     /// the moon's light lies on the moving water, the swish where
-    /// the hand has been (the water's answer, heard), and how low
-    /// the voice should sit (lower, in the water's night). The
-    /// voice eases toward each of them, the way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, cutoff: Double) {
+    /// the hand has been (the water's answer, heard), the low tone
+    /// under the water where the deep one passes (a body's voice,
+    /// the piece's first that is not the water's), and how low the
+    /// voice should sit (lower, in the water's night). The voice
+    /// eases toward each of them, the way water eases.
+    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
         tuckTarget = tuck
         glintTarget = glint
         swishTarget = swish
+        deepTarget = deep
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + tuck + glint + swish > 0.03
+        let isSpeaking = murmur + rain + tuck + glint + swish + deep > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, glintTarget, swishTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, glintTarget, swishTarget, deepTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -328,10 +351,26 @@ final class WaterVoice: ObservableObject {
                 glintSum += sin(g.phase) * g.env * g.weight
                 glinters[gi] = g
             }
+            // the deep one's voice: one low tone, the way a single
+            // body makes a single sound — it breathes the way the
+            // body breathes, and it comes up slowly and goes down
+            // slowly, the way a large body's voice does. The
+            // water's voices are the water's motion; this one is a
+            // body's motion
+            deepSampleClock += 1
+            deepPhase += 2 * .pi * 55.0 * (
+                1 + 0.06 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 29) + 0.4)
+            ) / Double(format.sampleRate)
+            if deepPhase >= 4 * .pi { deepPhase -= 4 * .pi }
+            deepToneGain += (target.deep - deepToneGain) * 0.0008
+            let deepTone = sin(deepPhase)
+                * deepToneGain * 1.6
+                * (0.75 + 0.25 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 37) + 1.2))
             // the voice eases toward what the water is doing, the
             // way water eases: the murmur slowly, the rain at the
             // storm's pace, the colony tucks in slowly, the sky
-            // glints slowly, and the swish at the hand's
+            // glints slowly, the deep one's tone slowly still, and
+            // the swish at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
             tuckGain += (target.tuck - tuckGain) * 0.004
@@ -342,6 +381,7 @@ final class WaterVoice: ObservableObject {
                 + tuckSum * tuckGain * 1.2
                 + glintSum * glintGain * 1.2
                 + swishHiss * swishGain
+                + deepTone
             // a soft edge, the way the water has soft edges
             out = tanh(out * 1.4) / tanh(1.4)
             samples[frame] = Float(out)
@@ -351,7 +391,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, glint %f)", level, tuckGain, glintGain)
+            os_log("fb voice: level %f (tuck %f, glint %f, deep %f)", level, tuckGain, glintGain, deepToneGain)
         }
     }
 }

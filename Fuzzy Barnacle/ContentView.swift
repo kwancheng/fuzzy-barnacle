@@ -37,7 +37,17 @@ import SwiftData
 /// lit by the sky for a while, the motes catching the beam, the
 /// moving water glinting under it, the way the sea glints under
 /// the moon — and when the crossing passes, the water does not
-/// remember it, the way it does not remember the storm.
+/// remember it, the way it does not remember the storm. And,
+/// most rarely of all, something passes through the deep: a
+/// large slow body in the water's depths, below the rock the
+/// colony is on, the water's current going around its back the
+/// way it goes around the hand, the colony slowing its breath
+/// under it, the way sleepers slow under a passing shadow — and
+/// under it all a low tone, one low tone, the way a single body
+/// makes a single sound: the piece's first voice that is not the
+/// water's. And when the passing ends, the water is the water
+/// again, and does not remember it, and the deep one does not
+/// remember the water either.
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Barnacle.timestamp) private var barnacles: [Barnacle]
@@ -131,8 +141,10 @@ struct ContentView: View {
     /// (the murmur), how much storm is over the water (the rain),
     /// the closing of the colony's shells where the storm tucks the
     /// colony in (the tuck), the glint where the moon's light lies
-    /// on the moving water, the swish where the hand has been, and
-    /// how low the voice sits, which is lower in the water's night.
+    /// on the moving water, the swish where the hand has been, the
+    /// low tone under the water where the deep one passes — the
+    /// piece's first voice that is not the water's — and how low
+    /// the voice sits, which is lower in the water's night.
     /// The swish runs on the world's time, the way the hand's other
     /// answers do — it is the hand the water knows, not the clock
     /// the water keeps.
@@ -152,6 +164,7 @@ struct ContentView: View {
             tuck: Self.tuckGain(storm: stormNow),
             glint: Self.glintGain(moon: moonNow, current: Self.tide(t).strength),
             swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
+            deep: Self.deepGain(Self.deep(t)),
             cutoff: 240 + 660 * (0.3 + 0.7 * light)
         )
     }
@@ -178,10 +191,15 @@ struct ContentView: View {
                     let light = Self.drawnLight(t)
                     let moonNow = Self.moonDrawn(t)
                     let moonBeamX = Self.moonBeamX(t, width: size.width)
+                    let deepNow = Self.deep(t)
+                    let deepCenter = CGPoint(
+                        x: Self.deepX(t, width: size.width),
+                        y: Self.deepY(t, height: size.height)
+                    )
                     let handFlash = presence > 0.001 && handSpeed > 1
                         ? Self.handFlashEnvelope(speed: handSpeed, age: now.timeIntervalSince(handSpeedAt), light: light)
                         : 0
-                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX)
+                    drawWater(&context, size: size, t: t, fingerPoint: fingerPoint, presence: presence, light: light, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX, deep: deepNow, deepCenter: deepCenter)
                     // the wake: the water's own small light, stirred
                     // along the hand's path, drawn in the water and
                     // under everything the water carries
@@ -192,7 +210,7 @@ struct ContentView: View {
                         drawGhost(&context, ghost, size: size, now: vnow, light: light, storm: stormNow, fingerPoint: fingerPoint, presence: presence, moon: moonNow, moonBeamX: moonBeamX)
                     }
                     for barnacle in barnacles {
-                        drawBarnacle(&context, barnacle, size: size, now: vnow, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX)
+                        drawBarnacle(&context, barnacle, size: size, now: vnow, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX, deep: deepNow, deepCenter: deepCenter)
                     }
                     for ripple in ripples {
                         drawRipple(&context, ripple, size: size, now: now)
@@ -365,6 +383,11 @@ struct ContentView: View {
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
+                if let deepLine = deepLine(for: vnow) {
+                    Text(deepLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
                 if let quietLine = quietLine(for: vnow) {
                     Text(quietLine)
                         .font(.system(.caption2, design: .serif).italic())
@@ -510,6 +533,22 @@ struct ContentView: View {
         let px = r > 1 ? x / r * part : 0
         let py = r > 1 ? y / r * part : 0
         return ((u.dx - flow.dx) * 6.0 * presence + px, (u.dy - flow.dy) * 6.0 * presence + py)
+    }
+
+    /// The parting the water makes around the deep one's back: a
+    /// soft outward bending, strongest over the body, gone a
+    /// body-length away — the way the water parts around the hand,
+    /// only fainter: the deep one is deep, and the water turns
+    /// around it only a little.
+    private func deepParting(_ p: CGPoint, deepCenter: CGPoint, deep: Double, size: CGSize) -> (dx: Double, dy: Double) {
+        let sx = 0.30 * Double(size.width)
+        let sy = 0.10 * Double(size.height)
+        let nx = (Double(p.x) - Double(deepCenter.x)) / sx
+        let ny = (Double(p.y) - Double(deepCenter.y)) / sy
+        let r2 = nx * nx + ny * ny
+        let r = max(r2.squareRoot(), 0.001)
+        let part = 9.0 * deep * exp(-r2 / 2)
+        return (nx / r * part, ny / r * part)
     }
 
     @inline(__always)
@@ -856,6 +895,83 @@ struct ContentView: View {
         return nil
     }
 
+    // MARK: - The Deep
+
+    /// The deep one: a body in the water's depths — large, slow,
+    /// and rarely there. It is the piece's lowest life: below the
+    /// rock the colony is on, below the water the quick ones ride,
+    /// in the dark where the light from the surface has given up.
+    /// It comes the way the storm and the moon come, only rarer
+    /// still — two incommensurate currents must turn to face the
+    /// same way at once, and the deep season, which turns on a
+    /// calendar slower than the sky's, must be willing. While it is
+    /// here it drifts across the depths, entering from one side of
+    /// the water and leaving by the other — the water's current
+    /// goes around its back the way it goes around the hand, and
+    /// the colony slows its breath under it, the way sleepers slow
+    /// under a passing shadow. And when it passes, the water is the
+    /// water again, and does not remember it — and the deep one
+    /// does not remember the water either.
+    static func deep(_ t: Double) -> Double {
+        // the alignment: two incommensurate currents must turn to
+        // face the same way at once — the storm's kind of coming,
+        // held to a narrower gate, the way the deep is narrow
+        let a = sin(t * 2 * .pi / 2531 + 0.3)
+        let b = sin(t * 2 * .pi / 1117 + 2.6)
+        let alignment = a * b * 0.5 + 0.5
+        // the deep season: the deep keeps its own calendar, and it
+        // turns slower than the sky's seasons, the way the deep
+        // turns
+        let season = 0.5 + 0.5 * sin(t * 2 * .pi / 5999 + 4.4)
+        return smoothstep(0.86, 0.97, alignment) * pow(season, 3)
+    }
+
+    /// Where the deep one is crossing: its passing is a drifting —
+    /// it enters from one side of the water and leaves by the
+    /// other, slowly, the way something of its size moves. The
+    /// water is patient; the deep is patient still.
+    static func deepX(_ t: Double, width: Double) -> Double {
+        return width * (0.5 + 0.92 * sin(t * 2 * .pi / 1433 + 2.2))
+    }
+
+    /// Where the deep one keeps: low in the water, always — and it
+    /// breathes there, slowly, the way something that deep
+    /// breathes.
+    static func deepY(_ t: Double, height: Double) -> Double {
+        return height * (0.80 + 0.045 * sin(t * 2 * .pi / 517 + 0.9))
+    }
+
+    /// The deep one's size: a body long enough that its passing is
+    /// a crossing of the water, not a blink of it.
+    static func deepBodyLength(width: Double) -> Double {
+        return 0.55 * width
+    }
+
+    /// The deep one's voice, as a gain: one low tone, the way a
+    /// single body makes a single sound. The water's voices are
+    /// the water's motion — the murmur, the rain, the swish — and
+    /// the granular voices of the populations — the colony's
+    /// closing, the sky's glint. But the deep one is a body of its
+    /// own, and its voice is its own: one low tone under the
+    /// water, quiet the way the deep is quiet.
+    static func deepGain(_ deep: Double) -> Double {
+        return 0.05 * deep
+    }
+
+    /// The deep one, as the caption keeps it: it passes rarely, and
+    /// while it is under the water the caption says so, the way the
+    /// caption keeps the storm and the moon.
+    private func deepLine(for now: Date) -> String? {
+        let d = Self.deep(now.timeIntervalSinceReferenceDate)
+        if d > 0.5 {
+            return "the deep one is under the water"
+        }
+        if d > 0.15 {
+            return "something deep is passing"
+        }
+        return nil
+    }
+
     // MARK: - The Wake
 
     /// How long the wake holds before the water forgets it. It is a
@@ -1106,7 +1222,7 @@ struct ContentView: View {
         }
     }
 
-    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double, moon: Double, moonBeamX: Double) {
+    private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double, moon: Double, moonBeamX: Double, deep: Double, deepCenter: CGPoint) {
         let rect = CGRect(origin: .zero, size: size)
 
         // the depth: darker in the water's night, the way the sea
@@ -1159,6 +1275,15 @@ struct ContentView: View {
             )
         }
 
+        // the deep one: a large slow body in the water's depths —
+        // under everything the water carries: the motes are near
+        // the surface, the colony is on the rock, and the deep one
+        // is below all of it. The moon's beam, when it comes,
+        // falls on its back
+        if deep > 0.01 {
+            drawDeep(&context, size: size, t: t, deep: deep, deepCenter: deepCenter, light: light, moon: moon, moonBeamX: moonBeamX)
+        }
+
         // the moon's beam: the sky's cold light, drifting across the
         // water — a broad one, the way the moon's light on the sea
         // is broad. While it is here, the water is lit by the sky;
@@ -1195,8 +1320,20 @@ struct ContentView: View {
             let upFor = progress / speed
             let carry = tideFlow(t - upFor / 2)
             let carryFactor = 0.8 + 0.4 * Self.fuzz(0x5EED, 150 + i)
-            x += carry.dx * upFor * carryFactor
-            y += carry.dy * upFor * carryFactor * 0.35
+            // the water slows over the deep one's back, the way a
+            // river slows over a submerged stone: the mote's being
+            // carried is less, the deeper the water under it
+            var carryDamp = 1.0
+            if deep > 0.02 {
+                let wx = x + carry.dx * upFor * carryFactor
+                let wy = y + carry.dy * upFor * carryFactor * 0.35
+                let dxn = (wx - Double(deepCenter.x)) / (0.30 * Double(size.width))
+                let dyn = (wy - Double(deepCenter.y)) / (0.10 * Double(size.height))
+                let prox = exp(-(dxn * dxn + dyn * dyn) / 2)
+                carryDamp = 1 - 0.4 * deep * prox
+            }
+            x += carry.dx * upFor * carryFactor * carryDamp
+            y += carry.dy * upFor * carryFactor * 0.35 * carryDamp
             let span = Double(size.width) + 40
             var xx = x.truncatingRemainder(dividingBy: span)
             if xx < 0 { xx += span }
@@ -1204,6 +1341,15 @@ struct ContentView: View {
             if let fp = fingerPoint, presence > 0.001 {
                 // the water parts around the hand
                 let parting = handParting(CGPoint(x: xx, y: y), finger: fp, presence: presence, t: t)
+                xx += parting.dx
+                y += parting.dy
+            }
+            if deep > 0.02 {
+                // the mote is bent out of the way of the deep one,
+                // the way it is bent out of the way of the hand —
+                // fainter: it is deep, and the water only turns
+                // around it a little
+                let parting = deepParting(CGPoint(x: xx, y: y), deepCenter: deepCenter, deep: deep, size: size)
                 xx += parting.dx
                 y += parting.dy
             }
@@ -1250,7 +1396,107 @@ struct ContentView: View {
         }
     }
 
-    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double, moon: Double, moonBeamX: Double) {
+    /// The deep one, drawn: the water's own soft dark, laid along
+    /// its spine — a body long enough that its passing is a
+    /// crossing of the water. In the day it is a shadow moving
+    /// through the light; in the night it is a dark against the
+    /// colony's own small light; and where the moon's beam lies on
+    /// its back, the sky's light stops on the passing shadow. When
+    /// it passes, the water does not remember it.
+    private func drawDeep(_ context: inout GraphicsContext, size: CGSize, t: Double, deep: Double, deepCenter: CGPoint, light: Double, moon: Double, moonBeamX: Double) {
+        let length = Self.deepBodyLength(width: size.width)
+        // its heading: the way its crossing moves, its head leads —
+        // the head is the way the crossing goes
+        let movingRight = cos(t * 2 * .pi / 1433 + 2.2) >= 0
+        // its slow bend: the body bends, the way something of its
+        // size bends
+        let bend = 12.0 * sin(t * 2 * .pi / 613 + 1.4)
+        // the body is made of the water's own soft dark — the piece
+        // has light made of the piece's light, and dark made of the
+        // piece's dark
+        let bodyColor = Color(red: 0.004, green: 0.02, blue: 0.045)
+        // the shadow shows where there is light to be a shadow in:
+        // plain in the day, a dark against the colony's own light
+        // in the night
+        let alpha = deep * (0.05 + 0.16 * light)
+        // a soft dark body: ten along the spine, thinning toward
+        // the head and the tail the way a body thins — and the
+        // spine bends slowly, the way something of its size bends
+        let count = 10
+        for i in 0..<count {
+            // along the body, 0 = the tail, 1 = the head; the head
+            // leads the way the crossing goes — and the body thins
+            // to nothing at both ends, the way a body does
+            let u = Double(i) / Double(count - 1)
+            let s = movingRight ? (u - 0.5) * 2 : (0.5 - u) * 2
+            let taper = pow(sin(.pi * u), 0.7)
+            let halfW = length * 0.13 * taper
+            guard halfW > 1 else { continue }
+            let halfH = halfW * 0.62
+            let x = deepCenter.x + s * length * 0.5
+            let y = deepCenter.y + bend * s
+            context.fill(
+                Path(ellipseIn: CGRect(x: x - halfW, y: y - halfH, width: halfW * 2, height: halfH * 2)),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        bodyColor.opacity(alpha),
+                        bodyColor.opacity(alpha * 0.35),
+                        .clear,
+                    ]),
+                    center: CGPoint(x: x, y: y),
+                    startRadius: 0,
+                    endRadius: max(halfW, halfH)
+                )
+            )
+        }
+        // the water's light skims the back: a faint sheen along the
+        // body's upper edge, the way light skims the back of
+        // something that swims
+        let sheenY = deepCenter.y - length * 0.05
+        context.fill(
+            Path(ellipseIn: CGRect(x: deepCenter.x - length * 0.38, y: sheenY - 2.5, width: length * 0.76, height: 5)),
+            with: .radialGradient(
+                Gradient(colors: [
+                    Color(red: 0.75, green: 0.85, blue: 0.95).opacity(0.05 * deep * (0.2 + 0.8 * light)),
+                    .clear,
+                ]),
+                center: CGPoint(x: deepCenter.x, y: sheenY),
+                startRadius: 0,
+                endRadius: length * 0.38
+            )
+        )
+        // the moon's light finds the deep one's back: where the beam
+        // crosses the body, the sky's light stops on the passing
+        // shadow — a cold edge on its back, at the place of the
+        // beam, and when the moon passes, it does not remember
+        // finding it
+        if moon > 0.02 {
+            let fall = Self.moonBeamFall(
+                x: Double(deepCenter.x),
+                beamX: moonBeamX,
+                sigma: Self.moonBeamSigma(width: size.width)
+            )
+            if fall > 0.05 {
+                // the light stops where the beam is, clamped to the
+                // body: the back under the beam, and only there
+                let litX = min(max(moonBeamX, deepCenter.x - length * 0.42), deepCenter.x + length * 0.42)
+                context.fill(
+                    Path(ellipseIn: CGRect(x: litX - length * 0.26, y: sheenY - 4, width: length * 0.52, height: 8)),
+                    with: .radialGradient(
+                        Gradient(colors: [
+                            Color(red: 0.78, green: 0.86, blue: 1.0).opacity(0.16 * moon * fall),
+                            .clear,
+                        ]),
+                        center: CGPoint(x: litX, y: sheenY),
+                        startRadius: 0,
+                        endRadius: length * 0.26
+                    )
+                )
+            }
+        }
+    }
+
+    private func drawBarnacle(_ context: inout GraphicsContext, _ barnacle: Barnacle, size: CGSize, now: Date, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, handFlash: Double, storm: Double, moon: Double, moonBeamX: Double, deep: Double, deepCenter: CGPoint) {
         let seed = barnacle.seed
 
         // settling: born at its timestamp, eases in with a small overshoot
@@ -1299,14 +1545,26 @@ struct ContentView: View {
             }
         }
 
+        // the deep one, where it is passing under the water: the
+        // colony slows its breath under the passing shadow, the
+        // way sleepers slow under a shadow — not the storm's tuck:
+        // the deep one is not weather, and the colony does not
+        // tuck to it. Where the deep one is not, this is nothing,
+        // the way all of the water's answers are nothing
+        let deepLocal = deep * exp(
+            -pow((Double(barnacle.x) * Double(size.width) - Double(deepCenter.x)) / (0.40 * Double(size.width)), 2)
+        )
+
         // a barnacle that feels the current breathes a little deeper —
         // but a barnacle that has settled into the rock breathes
         // slower, and in the water's night the whole colony breathes
         // shallow, the way sleepers breathe, and in the storm the
-        // whole colony holds its breath
+        // whole colony holds its breath, and under the deep one the
+        // whole colony slows its breath, the way sleepers slow under
+        // a passing shadow
         let rest = 1 - light
         let breath = 1
-            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle) * (1 - 0.4 * rest) * (1 - 0.5 * storm)
+            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle) * (1 - 0.4 * rest) * (1 - 0.5 * storm) * (1 - 0.35 * deepLocal)
             * sin(t * (0.7 * (1 - 0.35 * ageSettle)) + breathePhase)
 
         let center = CGPoint(
@@ -1492,6 +1750,10 @@ struct ContentView: View {
             // while, the plumes reach into the passing light, the
             // way the colony reaches into anything that feeds it
             * (1 + 0.35 * moonLocal)
+            // and the colony under the deep one folds its plumes a
+            // little, the way they fold under anything that moves
+            // the water — not the tuck: the deep one is not weather
+            * (1 - 0.25 * deepLocal)
         var plumeAngle = plumeBase
         var plumeVis = 0.14 + 0.10 * tideNow.strength
         if attention > cirriThreshold {
