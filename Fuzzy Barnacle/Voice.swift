@@ -41,7 +41,20 @@ import os.log
 /// word is the gild, and it is the sky's voice on the water's
 /// motion, the way the glint is — the moving water gilds, the
 /// still water does not — and when the turning turns to the day
-/// the wash is gone, and the water does not remember it.
+/// the wash is gone, and the water does not remember it. And where
+/// a body of the deep is in the water, the water hushes its own
+/// voice around it: the murmur — the tide's turning, the water's
+/// own speech — goes thin where the body speaks, the way a river's
+/// voice goes thin around a stone in its bed. The hush is the one
+/// taking-away the body makes: everything else the body makes in
+/// the piece is a giving — the water goes around it, the body
+/// carries a light, the surface answers its breath, the voice
+/// carries its tone — and the hush is the body's presence thinning
+/// the water's own voice, made for the body, and gone when the body
+/// is gone, the way everything is. The hush is on the water's own
+/// voice only: the rain keeps falling, the way rain keeps falling
+/// on a stone, and the body's own tone keeps its own breath through
+/// the hush, the way the body does not read the sky's word.
 ///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
@@ -70,6 +83,11 @@ final class WaterVoice: ObservableObject {
     private var deepTarget: Double = 0
     private var twinTarget: Double = 0
     private var gildTarget: Double = 0
+    // The hush: not a voice of the water's making, but the water's
+    // own voice thinned where a body of the deep is in the water —
+    // the piece tells the voice how hushed the water's own speech
+    // is, the way the piece tells it everything
+    private var hushTarget: Double = 0
     private var cutoffTarget: Double = 500
 
     // The render state, touched only on the audio thread.
@@ -291,10 +309,13 @@ final class WaterVoice: ObservableObject {
     /// the piece's first that is not the water's), and the twin's
     /// tone, a little above it (its body's voice — and where the
     /// two are together, the two tones beat, the piece's rarest
-    /// sound), and how low the voice should sit (lower, in the
-    /// water's night). The voice eases toward each of them, the
-    /// way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
+    /// sound), the hush — how much of the water's own speech is
+    /// thinned where a body of the deep is in the water: the murmur
+    /// arrives already thinned, and the hush is kept as the piece's
+    /// own account of it, the way the piece keeps the water's — and
+    /// how low the voice should sit (lower, in the water's night).
+    /// The voice eases toward each of them, the way water eases.
+    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
@@ -304,6 +325,7 @@ final class WaterVoice: ObservableObject {
         swishTarget = swish
         deepTarget = deep
         twinTarget = twin
+        hushTarget = hush
         cutoffTarget = cutoff
         targetLock.unlock()
         let isSpeaking = murmur + rain + tuck + glint + gild + swish + deep + twin > 0.03
@@ -312,10 +334,10 @@ final class WaterVoice: ObservableObject {
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, glintTarget, gildTarget, swishTarget, deepTarget, twinTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, glintTarget, gildTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -479,7 +501,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, glint %f, deep %f, twin %f, gild %f)", level, tuckGain, glintGain, deepToneGain, twinToneGain, gildGain)
+            os_log("fb voice: level %f (tuck %f, glint %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, glintGain, deepToneGain, twinToneGain, gildGain, target.hush)
         }
     }
 }

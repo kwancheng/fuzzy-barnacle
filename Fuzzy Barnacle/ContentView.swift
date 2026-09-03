@@ -219,18 +219,24 @@ struct ContentView: View {
         let light = Self.drawnLight(t)
         let stormNow = Self.storm(t)
         let moonNow = Self.moonDrawn(t)
+        let deepNow = Self.deep(t)
+        let twinNow = Self.deepTwin(t)
         voice.update(
-            murmur: Self.murmurGain(
+            murmur: Self.spokenMurmur(
                 strengthNow: Self.tide(t).strength,
-                strengthThen: Self.tide(t - 2).strength
+                strengthThen: Self.tide(t - 2).strength,
+                deep: deepNow,
+                twin: twinNow,
+                t: t
             ),
             rain: Self.rainGain(storm: stormNow, light: light),
             tuck: Self.tuckGain(storm: stormNow),
             glint: Self.glintGain(moon: moonNow, current: Self.tide(t).strength),
             gild: Self.gildGain(warmth: Self.skyWarmth(t), current: Self.tide(t).strength),
             swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
-            deep: Self.deepGain(Self.deep(t)),
-            twin: Self.deepTwinGain(Self.deepTwin(t)),
+            deep: Self.deepGain(deepNow),
+            twin: Self.deepTwinGain(twinNow),
+            hush: Self.hushGain(deep: deepNow, twin: twinNow, t: t),
             cutoff: 240 + 660 * (0.3 + 0.7 * light)
         )
     }
@@ -459,6 +465,11 @@ struct ContentView: View {
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
+                if let hushLine = hushLine(for: vnow) {
+                    Text(hushLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
                 if let quietLine = quietLine(for: vnow) {
                     Text(quietLine)
                         .font(.system(.caption2, design: .serif).italic())
@@ -526,8 +537,8 @@ struct ContentView: View {
     /// as the tide turns, and the flood and the ebb speak, and the
     /// caption does not need to say that. Only at the slack — and
     /// not in the storm, and not where a moving hand has been
-    /// swishing — is the water quiet, and only then does the caption
-    /// say so.
+    /// swishing, and not where a body of the deep hushes the water —
+    /// is the water quiet, and only then does the caption say so.
     private func quietLine(for now: Date) -> String? {
         let t = now.timeIntervalSinceReferenceDate
         let murmur = Self.murmurGain(
@@ -542,7 +553,24 @@ struct ContentView: View {
             speed: handSpeed,
             age: max(0, Date.now.timeIntervalSince(handSpeedAt))
         ) < 0.03 else { return nil }
+        // the hush is a different quiet: "the water is quiet" is the
+        // slack's stillness, the water's own — where a body of the
+        // deep is in the water the water hushes, and the caption
+        // says that, not the other
+        guard Self.hushGain(deep: Self.deep(t), twin: Self.deepTwin(t), t: t) < 0.05 else { return nil }
         return "the water is quiet"
+    }
+
+    /// The hush, as the caption keeps it: where a body of the deep
+    /// is in the water the water's own speech goes thin around it —
+    /// the water hushes, the way a river hushes around a stone — and
+    /// the caption says so, the way it says the deep. The hush is
+    /// the water's own quiet, made for the body, kept apart from the
+    /// slack's quiet, the way the two are kept apart in the water.
+    private func hushLine(for now: Date) -> String? {
+        let t = now.timeIntervalSinceReferenceDate
+        guard Self.hushGain(deep: Self.deep(t), twin: Self.deepTwin(t), t: t) > 0.05 else { return nil }
+        return "the water hushes"
     }
 
     // MARK: - The Current
@@ -1317,6 +1345,72 @@ struct ContentView: View {
     /// rarest sound is heard from below.
     static func deepTwinAnswer(twin: Double, light: Double, t: Double) -> Double {
         return Self.deepTwinLight(twin: twin, light: light, t: t) * 0.6
+    }
+
+    // MARK: - The Hush
+
+    /// The water hushes where the body is. Everything else the body
+    /// makes in the piece is a giving: the water goes around its
+    /// back, the body carries a light, the surface answers its
+    /// breath, the voice carries its tone. The hush is the one
+    /// taking-away the body makes: where a body of the deep is in
+    /// the water, the water's own speech — the murmur, the tide's
+    /// turning — goes thin around it, the way a river's voice goes
+    /// thin around a stone in its bed. The hush is the body's
+    /// presence, not the body's envelope alone: it tracks the body's
+    /// crossing, and when the body drifts fully off the water the
+    /// hush goes with it, and the water speaks again, the way a
+    /// river speaks again past the stone. The smaller body hushes
+    /// the water less, the way the smaller body turns the water
+    /// less — seven ninths of the way the larger one does, the way
+    /// its kind turns. And the hush is on the water's own voice
+    /// only: the rain keeps falling, the way rain keeps falling on a
+    /// stone, and the body's own tone keeps its own breath through
+    /// the hush, the way the body does not read the sky's word — one
+    /// speaks, one hushes, and the hush is the water's, made for the
+    /// body, gone when the body is gone, and not remembered, the
+    /// way everything is. A pure function of the water's clock —
+    /// the water does not remember the hush; verify with the shifted
+    /// clock.
+    static func hushGain(deep: Double, twin: Double, t: Double) -> Double {
+        // the hush is the water's, so it is measured on the water's
+        // own width, the way the water measures anything: the
+        // body's crossing on the water's own scale
+        func hush(_ x: Double, presence: Double, sigma: Double) -> Double {
+            guard presence > 0 else { return 0 }
+            // the hush is where the body is: the water's own
+            // parting, a falloff on the body's crossing, the way the
+            // water's own parting of the body is
+            let d = (x - 0.5) / sigma
+            return exp(-0.5 * d * d) * presence
+        }
+        // the larger body hushes the water more, the way the larger
+        // body turns the water more — the water's own parting of
+        // the larger body is the wider, and the hush is wide with
+        // it
+        let hushDeep = 0.40 * hush(Self.deepX(t, width: 1), presence: deep, sigma: 0.30)
+        // the smaller body hushes the water less, the way its kind
+        // turns: seven ninths of the larger body's hush, the way
+        // seven ninths of its turning
+        let hushTwin = 0.31 * hush(Self.deepTwinX(t, width: 1), presence: twin, sigma: 0.24)
+        return max(hushDeep, hushTwin)
+    }
+
+    /// The murmur the water actually speaks: the tide's turning,
+    /// thinned where a body of the deep is in the water — the water
+    /// hushes where the body speaks. The hush only takes, and never
+    /// gives: the spoken murmur never exceeds the turning's own
+    /// voice, the way a hush is a taking-away, not a giving. Where
+    /// no body is in the water this is the murmur as it always was.
+    static func spokenMurmur(
+        strengthNow: Double,
+        strengthThen: Double,
+        deep: Double,
+        twin: Double,
+        t: Double
+    ) -> Double {
+        return Self.murmurGain(strengthNow: strengthNow, strengthThen: strengthThen)
+            * (1 - Self.hushGain(deep: deep, twin: twin, t: t))
     }
 
     // MARK: - The Wake

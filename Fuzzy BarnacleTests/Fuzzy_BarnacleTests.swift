@@ -986,4 +986,150 @@ struct Fuzzy_BarnacleTests {
         #expect(highGild < 0.005, "the gild is gone at the high, the way the warmth is gone at the high")
     }
 
+    // The hush: the one taking-away the body makes. Everything else
+    // the body makes in the piece is a giving — the water goes
+    // around it, the body carries a light, the surface answers its
+    // breath, the voice carries its tone. The hush is the body's
+    // presence thinning the water's own speech: where a body of the
+    // deep is in the water the murmur goes thin around it, the way
+    // a river's voice goes thin around a stone, and when the body
+    // drifts off the water the hush goes with it, and the water
+    // speaks again, the way a river speaks again past the stone.
+
+    @Test func theWaterHushesWhereTheBodySpeaks() {
+        // the hush is the body's presence, on the water's own
+        // speech: where there is no body there is no hush, and
+        // where a body is at the middle of the water the hush is at
+        // its full — and it is a hush, not a silence: it thins the
+        // water's voice, it does not take it
+        var maxDeep = 0.0
+        var maxTwin = 0.0
+        var offSeconds = 0
+        for i in stride(from: 0, to: 4872, by: 1) {
+            let t = Double(i)
+            // no body, no hush — the hush is the body's, the way
+            // everything in the piece is
+            #expect(ContentView.hushGain(deep: 0, twin: 0, t: t) == 0, "where there is no body there is no hush")
+            let hD = ContentView.hushGain(deep: 1, twin: 0, t: t)
+            let hT = ContentView.hushGain(deep: 0, twin: 1, t: t)
+            maxDeep = max(maxDeep, hD)
+            maxTwin = max(maxTwin, hT)
+            #expect(hD >= 0 && hD <= 0.40, "the hush is a thinning, not a taking-away: it stays in its own band")
+            if abs(ContentView.deepX(t, width: 1) - 0.5) > 0.75 {
+                offSeconds += 1
+            }
+        }
+        #expect(maxDeep > 0.39, "at the middle of the water the larger body's hush is at its full")
+        #expect(abs(maxDeep - 0.40) < 0.005, "the larger body's hush is the water's own hush: four tenths of the water's voice, no more")
+        #expect(offSeconds > 100, "the larger body does drift off the water, the way its passing is a crossing")
+    }
+
+    @Test func theSmallerBodyHushesLess() {
+        // the smaller body hushes the water less, the way the
+        // smaller body turns the water less — seven ninths of the
+        // way the larger one does, the way its kind turns: at the
+        // middle of the water the larger body's hush is the deeper
+        // of the two, the way its turning of the water is the
+        // deeper of the two
+        #expect(
+            abs(0.31 / 0.40 - 7.0 / 9.0) < 0.01,
+            "the smaller body hushes seven ninths of the way the larger one does, the way it turns the water"
+        )
+        var maxDeep = 0.0
+        var maxTwin = 0.0
+        for i in stride(from: 0, to: 8000, by: 1) {
+            let t = Double(i)
+            maxDeep = max(maxDeep, ContentView.hushGain(deep: 1, twin: 0, t: t))
+            maxTwin = max(maxTwin, ContentView.hushGain(deep: 0, twin: 1, t: t))
+        }
+        #expect(abs(maxTwin - 0.31) < 0.005, "at the middle of the water the smaller body's hush is its own, and a lesser one")
+        #expect(maxDeep > maxTwin, "at the middle of the water the larger body's hush is the deeper of the two, the way its turning is")
+    }
+
+    @Test func theHushGoesWithTheBody() {
+        // the hush is the body's presence, not the body's envelope
+        // alone: it tracks the body's crossing. Where the body is
+        // at the middle of the water the hush is at its full; where
+        // the body has drifted off the water — still present, its
+        // answer still at the surface, the way presence is not
+        // position — the hush has gone with it, and the water
+        // speaks again
+        // on the water's own scale: the larger body's crossing, and
+        // the hush of it, at full presence
+        var fullSeconds = 0
+        var goneSeconds = 0
+        for i in stride(from: 0, to: 2900, by: 1) {
+            let t = Double(i)
+            let off = abs(ContentView.deepX(t, width: 1) - 0.5)
+            if off < 0.15 {
+                #expect(ContentView.hushGain(deep: 1, twin: 0, t: t) > 0.30, "at the middle of the water the hush is at its full")
+                fullSeconds += 1
+            }
+            if off > 0.75 {
+                #expect(ContentView.hushGain(deep: 1, twin: 0, t: t) < 0.02, "off the water the hush goes with the body, and the water speaks again")
+                goneSeconds += 1
+            }
+        }
+        #expect(fullSeconds > 100, "the larger body does come to the middle of the water, and the hush is there")
+        #expect(goneSeconds > 100, "the larger body does drift off the water, and the hush goes with it")
+        // in the water's own calendar: a body present, and off the
+        // water, does come — and at each of them the hush is the
+        // small one, the way the body is the small one there
+        var offPresentSeconds = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            let d = ContentView.deep(t)
+            guard d > 0.5, abs(ContentView.deepX(t, width: 1) - 0.5) > 0.75 else { continue }
+            #expect(ContentView.hushGain(deep: d, twin: 0, t: t) < 0.02, "the body present and off the water: the hush has gone with it")
+            offPresentSeconds += 1
+        }
+        #expect(offPresentSeconds > 0, "a body present and off the water does come, the way the body's passing is a crossing of the water")
+    }
+
+    @Test func theWaterSpeaksAgainWhenThePassingEnds() {
+        // the hush is the passing's, and the passing ends: over a
+        // year of the water's clock the water hushes for a small
+        // part of the time only — the bodies are rare, and the
+        // hush is rarer still, being where the body is, and the
+        // water speaks most of the time, the way the water does
+        var hushSeconds = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            if ContentView.hushGain(deep: ContentView.deep(t), twin: ContentView.deepTwin(t), t: t) > 0.05 {
+                hushSeconds += 1
+            }
+        }
+        #expect(hushSeconds > 50_000, "the water does hush: where the bodies are in the water the water's own speech goes thin")
+        #expect(hushSeconds < 1_000_000, "the hush is a small part of the water's year: under an hour of hush to the water's day, the way the passing is a small part of the water's time")
+    }
+
+    @Test func theHushOnlyTakesFromTheMurmur() {
+        // the hush is a taking-away, not a giving: the spoken
+        // murmur — the tide's turning, thinned where the body is —
+        // never exceeds the turning's own voice, the way a hush
+        // never adds to the water's speech. At the middle of the
+        // water the water hushes, and off the water the water
+        // speaks again, the way a river speaks again past the stone
+        let now = 1.0
+        let then = 0.3
+        let own = ContentView.murmurGain(strengthNow: now, strengthThen: then)
+        #expect(own > 0.1, "the tide's turning does speak, the way the flood and the ebb speak")
+        var centerT = 0.0
+        var edgeT = 0.0
+        var centerOff = 10.0
+        var edgeOff = 0.0
+        for i in stride(from: 0, to: 2900, by: 1) {
+            let t = Double(i)
+            let spoken = ContentView.spokenMurmur(strengthNow: now, strengthThen: then, deep: 1, twin: 0, t: t)
+            #expect(spoken <= own + 1e-9, "the hush only takes: the spoken murmur never exceeds the turning's own voice")
+            let off = abs(ContentView.deepX(t, width: 1) - 0.5)
+            if off < centerOff { centerOff = off; centerT = t }
+            if off > edgeOff { edgeOff = off; edgeT = t }
+        }
+        let hushed = ContentView.spokenMurmur(strengthNow: now, strengthThen: then, deep: 1, twin: 0, t: centerT)
+        #expect(hushed < 0.65 * own, "at the middle of the water the water hushes: the turning's own voice, thinned around the body")
+        let again = ContentView.spokenMurmur(strengthNow: now, strengthThen: then, deep: 1, twin: 0, t: edgeT)
+        #expect(again > 0.9 * own, "off the water the hush goes with the body, and the water speaks again")
+    }
+
 }
