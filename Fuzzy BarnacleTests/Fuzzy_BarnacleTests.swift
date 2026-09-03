@@ -804,4 +804,75 @@ struct Fuzzy_BarnacleTests {
         )
     }
 
+    // The sky's light has a color: the water's day has always had a
+    // brightness; this gives it a color too. The sky's light comes
+    // down warm gold at the low turning of the water's day, the way
+    // the low light is warm, and white at its high, the way the high
+    // light is white — and the color is the sky's, the way the
+    // deep's light is the deep's: the water's own small lights keep
+    // their own, and the sky's light is the one that comes down, in
+    // a color.
+
+    @Test func theSkysLightTurnsWarm() {
+        // over a water-day there is a high (the light at its full,
+        // where the sky is white) and a turning (the low light, where
+        // the sky's warmth peaks): the warmth peaks at the turning
+        // and is gone at the high, the way the low light is warm and
+        // the high light is white
+        var highT = 0.0
+        var highDay = -1.0
+        var turnT = 0.0
+        var turnNear = Double.greatestFiniteMagnitude
+        for i in 0..<5760 { // a full water-day, quarter-second steps
+            let t = Double(i) * 0.25
+            let day = ContentView.daylight(t)
+            if day > highDay { highDay = day; highT = t }
+            if abs(day - 0.30) < turnNear { turnNear = abs(day - 0.30); turnT = t }
+        }
+        #expect(highDay > 0.95, "the day reaches its high")
+        #expect(turnNear < 0.05, "the day turns through the low light")
+        let highWarmth = ContentView.skyWarmth(highT)
+        let turnWarmth = ContentView.skyWarmth(turnT)
+        #expect(turnWarmth > 0.7, "the sky's warmth peaks at the turning")
+        #expect(highWarmth < 0.05, "the sky's warmth is gone at the high")
+        #expect(turnWarmth > highWarmth, "the turning is the warm moment, the high is not")
+        // and the warmth is a warmth, the way a brightness is a
+        // brightness: it is a value the sky keeps, not a color made
+        // up
+        for i in 0..<2160 {
+            #expect(ContentView.skyWarmth(Double(i) * 0.25) >= 0, "the sky's warmth is a warmth (low bound)")
+            #expect(ContentView.skyWarmth(Double(i) * 0.25) <= 1, "the sky's warmth is a warmth (high bound)")
+        }
+    }
+
+    @Test func theSkysLightIsWhiteAtTheHigh() {
+        // the color of the sky's light: at the high of the day it is
+        // white — the way the water renders at full light — and at
+        // the turning it is warm, red out ahead of blue, the way the
+        // low light is warm
+        var highT = 0.0
+        var highDay = -1.0
+        for i in 0..<5760 {
+            let t = Double(i) * 0.25
+            let day = ContentView.daylight(t)
+            if day > highDay { highDay = day; highT = t }
+        }
+        let high = ContentView.skyLightRGB(highT)
+        #expect(high.red > 0.98 && high.green > 0.98 && high.blue > 0.98,
+            "at the high of the day the sky's light is white")
+        // the turning: red out ahead of blue, the way the warm light
+        // is
+        var turnT = 0.0
+        var turnNear = Double.greatestFiniteMagnitude
+        for i in 0..<5760 {
+            let t = Double(i) * 0.25
+            if abs(ContentView.daylight(t) - 0.30) < turnNear {
+                turnNear = abs(ContentView.daylight(t) - 0.30)
+                turnT = t
+            }
+        }
+        let warm = ContentView.skyLightRGB(turnT)
+        #expect(warm.red > warm.blue, "at the turning the sky's light is warm — red ahead of blue")
+    }
+
 }

@@ -490,9 +490,11 @@ struct ContentView: View {
         }
     }
 
-    /// The water's own hour: whether it is in its day or its night.
-    /// In the turning between the two, the light is neither, and
-    /// the caption says nothing.
+    /// The water's own hour: whether it is in its day, its night, or
+    /// the turning between the two. The turning is the water's own
+    /// state, not a silence: it is the low light, the moment the
+    /// sky's light comes down warm — and the caption says so, the
+    /// way it says the day and the night.
     private func waterLine(for now: Date) -> String? {
         let light = Self.daylight(now.timeIntervalSinceReferenceDate)
         if light < 0.25 {
@@ -501,7 +503,7 @@ struct ContentView: View {
         if light > 0.75 {
             return "the water is in its day"
         }
-        return nil
+        return "the water is in its turning"
     }
 
     /// The water's voice, as the caption keeps it: the water speaks
@@ -820,6 +822,69 @@ struct ContentView: View {
         // the night is never pitch black: there is always some
         // light left in the water
         return min(1, max(0.02, day + murk))
+    }
+
+    /// The sky's light from above is not one light: it has a color,
+    /// and the color turns with the water's day. At the low turning
+    /// — the water's meeting of day and night, the low light — the
+    /// light that comes down is warm, the way the low light is
+    /// warm; at the high of the day the light that comes down is
+    /// white, the way the high light is white; and in the deep
+    /// night the sky has little light left to be warm. This is the
+    /// warmth of the sky's light — a pure function of the water's
+    /// clock, the way everything in the piece is — and it is the
+    /// sky's, the way the deep's light is the deep's and the
+    /// colony's glow is the colony's: the sky's light is the one
+    /// that comes down, and it comes down warm at the turning and
+    /// white at the high. And when the sky's cloud comes the light
+    /// that comes down is less, the way the cloud takes the light,
+    /// and the warmth goes down with it, the way the warmth goes
+    /// down with the light. A pure function of t — the sky does not
+    /// remember the turning, the way the sky forgets everything.
+    static func skyWarmth(_ t: Double) -> Double {
+        let day = daylight(t)
+        // the warmth is a low-light thing: it peaks at the turning,
+        // where the light is low, and is gone at the high, where the
+        // light is white, and is nearly gone in the deep night,
+        // where the sky has little light left at all
+        return exp(-pow((day - 0.30) / 0.22, 2) / 2)
+    }
+
+    /// The color of the sky's light from above: warm gold at the low
+    /// turning of the water's day, white at its high, and a faint
+    /// warm in the deep night where the sky has little light left.
+    /// At the high the color is white — the way the water renders at
+    /// full light — so a full day is the full day the piece has
+    /// always drawn, and the turning is the turning the piece has
+    /// not once given its color. The color is the sky's, the way
+    /// the deep's light is the deep's: the water's own small lights
+    /// keep their own, and the sky's light is the one that comes
+    /// down, and it comes down in a color.
+    /// The color of the sky's light from above, in 0...1: warm gold
+    /// at the low turning of the water's day, white at its high. This
+    /// is the color the piece lays down for everything the sky's
+    /// light touches — the surface light, the light shafts, the
+    /// motes — and the piece's own small lights keep their own
+    /// colors, the way the deep's light keeps its, the way the
+    /// colony's glow keeps its.
+    static func skyLightRGB(_ t: Double) -> (red: Double, green: Double, blue: Double) {
+        let w = skyWarmth(t)
+        // the sky's light goes from the gold of the low sun to the
+        // white of the high sun: warm gold at the turning, white at
+        // the high
+        return (
+            1.0,
+            0.66 + 0.34 * (1 - w),
+            0.52 + 0.48 * (1 - w)
+        )
+    }
+
+    /// The color of the sky's light from above, as the piece draws
+    /// it: the warm gold and the white, laid over the water where the
+    /// light from above reaches.
+    static func skyLightColor(_ t: Double) -> Color {
+        let c = skyLightRGB(t)
+        return Color(red: c.red, green: c.green, blue: c.blue)
     }
 
     /// The stirring the hand makes of the colony's self-light: in
@@ -1466,6 +1531,14 @@ struct ContentView: View {
     private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double, moon: Double, moonBeamX: Double, deep: Double, deepCenter: CGPoint, deepTwin: Double, deepTwinCenter: CGPoint) {
         let rect = CGRect(origin: .zero, size: size)
 
+        // the color of the sky's light from above: the water's day
+        // has a color, not only a brightness — warm gold at the low
+        // turning, white at the high, and a faint warm in the deep
+        // night where the sky has little light left. The water's own
+        // small lights keep their own colors; this is the one that
+        // comes down, and it comes down in a color
+        let skyColor = Self.skyLightColor(t)
+
         // the depth: darker in the water's night, the way the sea
         // is darker at night — and not black
         let depthLight = 0.35 + 0.65 * light
@@ -1482,11 +1555,14 @@ struct ContentView: View {
             )
         )
 
-        // soft light from the surface: gone with the day
+        // soft light from the surface: gone with the day, and in a
+        // color — the sky's light comes down warm at the turning and
+        // white at the high, the way the low light is warm and the
+        // high light is white
         context.fill(
             Path(rect),
             with: .radialGradient(
-                Gradient(colors: [Color.white.opacity(0.10 * (0.15 + 0.85 * light)), .clear]),
+                Gradient(colors: [skyColor.opacity(0.10 * (0.15 + 0.85 * light)), .clear]),
                 center: CGPoint(x: size.width * 0.5, y: -size.height * 0.25),
                 startRadius: 0,
                 endRadius: size.height * 0.95
@@ -1509,7 +1585,7 @@ struct ContentView: View {
             shaft.fill(
                 Path(shaftRect),
                 with: .linearGradient(
-                    Gradient(colors: [Color.white.opacity(0.05 * (0.12 + 0.88 * light)), .clear]),
+                    Gradient(colors: [skyColor.opacity(0.05 * (0.12 + 0.88 * light)), .clear]),
                     startPoint: .zero,
                     endPoint: CGPoint(x: 0, y: shaftRect.height)
                 )
@@ -1700,11 +1776,12 @@ struct ContentView: View {
             }
             let radius = 0.7 + 1.5 * Self.fuzz(0x5EED, 200 + i)
             // the motes are lit by the surface: at night only a few
-            // faint ones show
+            // faint ones show — and they take the color of the
+            // sky's light, warm at the turning, white at the high
             let alpha = (0.04 + 0.18 * Self.fuzz(0x5EED, 300 + i)) * (0.25 + 0.75 * light)
             context.fill(
                 Path(ellipseIn: CGRect(x: xx - radius, y: y - radius, width: radius * 2, height: radius * 2)),
-                with: .color(.white.opacity(alpha))
+                with: .color(skyColor.opacity(alpha))
             )
         }
 
