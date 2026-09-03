@@ -875,4 +875,115 @@ struct Fuzzy_BarnacleTests {
         #expect(warm.red > warm.blue, "at the turning the sky's light is warm — red ahead of blue")
     }
 
+    @Test func theWaterDrinksTheSkysColor() {
+        // the water's own color drinks the color of the light it is
+        // given: at the high the sky's light is white, and the
+        // water's own blue is exactly as it is — the full day is the
+        // full day the piece has always drawn — and at the turning
+        // the sky's light is warm, and the water is gilded, the way
+        // the sea is gilded at dusk. And the water only drinks: it
+        // never adds a color of its own, so its channels never
+        // exceed the color of the water with no sky's color in it
+        var highT = 0.0
+        var highDay = -1.0
+        var turnT = 0.0
+        var turnNear = Double.greatestFiniteMagnitude
+        for i in 0..<5760 { // a full water-day, quarter-second steps
+            let t = Double(i) * 0.25
+            let day = ContentView.daylight(t)
+            if day > highDay { highDay = day; highT = t }
+            if abs(day - 0.30) < turnNear { turnNear = abs(day - 0.30); turnT = t }
+        }
+        #expect(highDay > 0.95, "the day reaches its high")
+        #expect(turnNear < 0.05, "the day turns through the low light")
+        // the high: white light leaves the water's own blue as it
+        // is — within the white's edge, the way the high leaves it
+        let high = ContentView.waterColor(highT, light: 1.0)
+        #expect(high.top.blue >= 0.95 * 0.245, "at the high the water's blue is its own (top)")
+        #expect(high.top.green >= 0.95 * 0.20, "at the high the water's blue is its own (green)")
+        #expect(high.bottom.blue >= 0.95 * 0.11, "at the high the water's blue is its own (deep)")
+        // the turning: the warm light gilds the water — the blue is
+        // taken toward the gold, the way the low light takes the
+        // sea toward the gold
+        let turn = ContentView.waterColor(turnT, light: 0.30)
+        let turnDepthLight = 0.35 + 0.65 * 0.30
+        #expect(turn.top.blue < 0.60 * 0.245 * turnDepthLight, "at the turning the water's blue is gilded — taken toward the gold")
+        #expect(turn.top.blue < turn.top.green, "at the turning the water is copper, not blue — the green out ahead of the blue")
+        // the water only drinks: at every hour the water's channels
+        // are no more than the water's own with no sky's color in
+        // it — the water never adds a color of its own
+        for i in 0..<5760 {
+            let t = Double(i) * 0.25
+            let light = ContentView.daylight(t)
+            let c = ContentView.waterColor(t, light: light)
+            let depthLight = 0.35 + 0.65 * light
+            let deepLight = 0.30 + 0.70 * light
+            #expect(c.top.blue <= 0.245 * depthLight + 1e-9, "the water only drinks — top blue")
+            #expect(c.top.green <= 0.20 * depthLight + 1e-9, "the water only drinks — top green")
+            #expect(c.bottom.blue <= 0.11 * deepLight + 1e-9, "the water only drinks — deep blue")
+        }
+    }
+
+    @Test func theCloudTakesTheLightNotTheColor() {
+        // the storm's cloud takes the light, not the color: in the
+        // low light the cloud darkens the water, the way the cloud
+        // takes the light — but the water keeps the sky's warm
+        // color under it, the way the dusk under a cloud is still
+        // dusk: where the sky's dark word is over the water in the
+        // low light, the water is gilded, not blue
+        var found = 0
+        var leastGilded = 1.0
+        for i in 0..<6_307_200 { // a water-year, five-second steps
+            let t = Double(i) * 5
+            guard ContentView.storm(t) > 0.5, ContentView.daylight(t) < 0.30 else { continue }
+            found += 1
+            let light = ContentView.drawnLight(t)
+            let c = ContentView.waterColor(t, light: light)
+            let ownBlue = 0.245 * (0.35 + 0.65 * light)
+            leastGilded = min(leastGilded, c.top.blue / ownBlue)
+        }
+        #expect(found > 0, "the sky's dark word comes in the low light sometimes")
+        #expect(leastGilded < 0.7, "under the cloud in the low light the water keeps its gild")
+    }
+
+    @Test func theSkysWarmWordHasAVoice() {
+        // the gild: the sky's voice in its warm hour — the sky's
+        // dark word is the rain, the sky's cold word is the glint,
+        // and the sky's warm word is this. It is the sky's voice on
+        // the water's motion, the way the glint is: gone where the
+        // sky is not warm, up at the turning, and the moving water
+        // gilds more than the still water, the way the moving water
+        // glints more
+        #expect(ContentView.gildGain(warmth: 0, current: 1.0) == 0, "where the sky is not warm the gild is not")
+        #expect(ContentView.gildGain(warmth: 1.0, current: 1.0) > 0.03, "at the turning the gild is up")
+        #expect(ContentView.gildGain(warmth: 1.0, current: 1.0) <= 0.04, "the gild is a quiet voice, the way the glint is")
+        #expect(
+            ContentView.gildGain(warmth: 1.0, current: 1.0) > ContentView.gildGain(warmth: 1.0, current: 0.3),
+            "the moving water gilds more than the still water"
+        )
+        // over the water's day the gild comes at the turning and is
+        // gone at the high, the way the sky's warmth does: the
+        // sky's warm word is a word of the water's clock, the way
+        // everything in the piece is
+        var maxGild = 0.0
+        var highT = 0.0
+        var highDay = -1.0
+        for i in 0..<5760 {
+            let t = Double(i) * 0.25
+            let gild = ContentView.gildGain(
+                warmth: ContentView.skyWarmth(t),
+                current: ContentView.tide(t).strength
+            )
+            maxGild = max(maxGild, gild)
+            let day = ContentView.daylight(t)
+            if day > highDay { highDay = day; highT = t }
+        }
+        #expect(maxGild > 0.02, "the gild does come")
+        let highGild = ContentView.gildGain(
+            warmth: ContentView.skyWarmth(highT),
+            current: ContentView.tide(highT).strength
+        )
+        #expect(highGild < 0.005, "the gild is gone at the high, the way the warmth is gone at the high")
+    }
+
 }

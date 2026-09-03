@@ -15,7 +15,15 @@ import SwiftData
 /// and a night — and in the night the colony glows faintly of its
 /// own, and a moving hand stirs that glow, and the glow lingers a
 /// moment after the hand is gone, and the traces go dark except where
-/// the hand's light reaches them. And, rarely, a storm comes over
+/// the hand's light reaches them. And the sky's light is not only
+/// a brightness: it has a color — it comes down warm gold at the
+/// water's turning, and white at the high — and the water drinks
+/// the color of the light it is given, gilded at the turning the
+/// way the sea is gilded at dusk, and its own blue at the high,
+/// the way the sea is its own blue under a white sky, and when the
+/// turning turns to the day the water is the water again, and does
+/// not remember the gold, the way it forgets everything. And,
+/// rarely, a storm comes over
 /// the water: the current surges, the rain falls, the light from
 /// above dims under the cloud, the colony tucks in, and the quick
 /// ones ride it — and when the storm passes, the water is the water
@@ -26,7 +34,12 @@ import SwiftData
 /// speaks: the same tide that carries the motes is what murmurs,
 /// the same storm is what falls as rain, and a moving hand is what
 /// swishes, the way the sea swishes where a wave breaks — and the
-/// slack water is quiet, and the water says so. And the colony
+/// slack water is quiet, and the water says so. And when the water
+/// comes to its turning and the sky's light comes down warm, the
+/// voice warms with it — a low warm wash, the sky's own word in
+/// its warm hour, the way the rain is the sky's word in its dark
+/// hour, and gone the moment the turning turns to the day. And
+/// the colony
 /// speaks when it tucks in: when the storm comes and the colony
 /// closes its shells, there is a granular voice, made of the
 /// colony itself — sparse and far at the storm's stirring, a bed
@@ -185,15 +198,17 @@ struct ContentView: View {
     /// (the murmur), how much storm is over the water (the rain),
     /// the closing of the colony's shells where the storm tucks the
     /// colony in (the tuck), the glint where the moon's light lies
-    /// on the moving water, the swish where the hand has been, the
-    /// low tone under the water where the deep one passes — the
-    /// piece's first voice that is not the water's — and its twin's,
-    /// a second low tone sitting a little above the first, so that
-    /// where the two bodies are together the two tones beat against
-    /// each other, three swells a second, the way two large bodies
-    /// breathing at once would sound, the piece's rarest sound —
-    /// and how low the voice sits, which is lower in the water's
-    /// night.
+    /// on the moving water, the gild where the sky's light lies warm
+    /// on the moving water — the sky's warm word, the sky's dark
+    /// word being the rain and its cold word the glint — the swish
+    /// where the hand has been, the low tone under the water where
+    /// the deep one passes — the piece's first voice that is not the
+    /// water's — and its twin's, a second low tone sitting a little
+    /// above the first, so that where the two bodies are together
+    /// the two tones beat against each other, three swells a second,
+    /// the way two large bodies breathing at once would sound, the
+    /// piece's rarest sound — and how low the voice sits, which is
+    /// lower in the water's night.
     /// The swish runs on the world's time, the way the hand's other
     /// answers do — it is the hand the water knows, not the clock
     /// the water keeps.
@@ -212,6 +227,7 @@ struct ContentView: View {
             rain: Self.rainGain(storm: stormNow, light: light),
             tuck: Self.tuckGain(storm: stormNow),
             glint: Self.glintGain(moon: moonNow, current: Self.tide(t).strength),
+            gild: Self.gildGain(warmth: Self.skyWarmth(t), current: Self.tide(t).strength),
             swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
             deep: Self.deepGain(Self.deep(t)),
             twin: Self.deepTwinGain(Self.deepTwin(t)),
@@ -887,6 +903,44 @@ struct ContentView: View {
         return Color(red: c.red, green: c.green, blue: c.blue)
     }
 
+    /// The color of the water itself: the water drinks the color of
+    /// the light that comes down. The sky's light is not only a
+    /// brightness but a color — warm gold at the low turning, white
+    /// at the high, the way the sky's light is — and the water takes
+    /// the color it is given, the way water takes whatever the light
+    /// in it is: white light leaves the water's own blue exactly as
+    /// it is, the way the high leaves it, and the warm light of the
+    /// turning gilds it, the way the low light gilds the sea —
+    /// copper where the light lies, and teal where it does not. The
+    /// piece's own small lights keep their own colors, the way the
+    /// deep's light keeps its and the colony's glow keeps its; what
+    /// drinks the sky's color is the water itself, and the water only
+    /// drinks — it never adds its own — and when the turning turns to
+    /// the day the water is the water again, and does not remember
+    /// the gold, the way it forgets everything.
+    static func waterColor(
+        _ t: Double,
+        light: Double
+    ) -> (top: (red: Double, green: Double, blue: Double), bottom: (red: Double, green: Double, blue: Double)) {
+        let sky = skyLightRGB(t)
+        // the depth: darker in the water's night, the way the sea
+        // is darker at night — and not black
+        let depthLight = 0.35 + 0.65 * light
+        let deepLight = 0.30 + 0.70 * light
+        return (
+            top: (
+                red: 0.055 * depthLight * sky.red,
+                green: 0.20 * depthLight * sky.green,
+                blue: 0.245 * depthLight * sky.blue
+            ),
+            bottom: (
+                red: 0.012 * deepLight * sky.red,
+                green: 0.055 * deepLight * sky.green,
+                blue: 0.11 * deepLight * sky.blue
+            )
+        )
+    }
+
     /// The stirring the hand makes of the colony's self-light: in
     /// the water's night a moving hand is light, and the light
     /// lingers a moment after the hand has stopped or lifted. In
@@ -1316,7 +1370,14 @@ struct ContentView: View {
     /// the moving water, the water glints — small and high and
     /// sparse, the way a glint is: the sky's voice on the water,
     /// heard, and gone, and forgotten, the way the sky forgets
-    /// everything.
+    /// everything. And when the water comes to its turning and the
+    /// sky's light comes down warm, the voice warms with it — a low
+    /// warm wash, the sky's voice in its warm hour, the way the rain
+    /// is the sky's voice in its dark hour, and the glint is the
+    /// sky's voice in its cold hour: the moving water gilds, the
+    /// still water does not — and when the turning turns to the day
+    /// the wash is gone, and the water does not remember the
+    /// warmth, the way it forgets everything.
 
     /// How much of the water's low voice is up at a moment: the
     /// voice is the *turning* of the current — the change of the
@@ -1376,6 +1437,30 @@ struct ContentView: View {
         // the water measures the way it measures anything
         let motion = min(1, max(0, (current - 0.3) / 0.7))
         return 0.03 * moon * (0.30 + 0.70 * motion)
+    }
+
+    /// The sky's warm word, as a voice. The sky has a voice in its
+    /// dark hour — the rain, where the storm is — and a voice in its
+    /// cold hour — the glint, where the moon's light lies on the
+    /// moving water — and its warm hour, the turning, the low light
+    /// where the sky's light comes down warm gold, has one now: a
+    /// low warm wash, present only while the light is warm, gone at
+    /// the high where the light is white, and gone in the deep night
+    /// where the sky has given out. It is the sky's voice on the
+    /// water's *motion*, the way the glint is: the moving water
+    /// gilds, the still water does not — the sky does not make the
+    /// warmth, it makes the warmth audible in the motion, the way
+    /// the moon makes the sparkle. The sky's dark word is the rain,
+    /// the sky's cold word is the glint, and the sky's warm word is
+    /// this — and when the turning turns to the day the wash is
+    /// gone, and the water does not remember the warmth, the way it
+    /// forgets everything.
+    static func gildGain(warmth: Double, current: Double) -> Double {
+        // the gild is warmth on motion: the tide's strength, which
+        // the water measures the way it measures anything — the
+        // moving water gilds, the still water does not
+        let motion = min(1, max(0, (current - 0.3) / 0.7))
+        return 0.04 * warmth * (0.30 + 0.70 * motion)
     }
 
     // MARK: - Virtual Time
@@ -1539,16 +1624,20 @@ struct ContentView: View {
         // comes down, and it comes down in a color
         let skyColor = Self.skyLightColor(t)
 
-        // the depth: darker in the water's night, the way the sea
-        // is darker at night — and not black
-        let depthLight = 0.35 + 0.65 * light
-        let deepLight = 0.30 + 0.70 * light
+        // the water's own color: the water drinks the color of the
+        // light it is given — gilded at the turning, the way the sea
+        // is gilded at dusk, and its own blue at the high, the way
+        // the sea is its own blue under a white sky. In the night
+        // the sky has little light left to give a color, and the
+        // water is nearly dark, and what color is left in it is the
+        // sky's. The water only drinks; it never adds its own
+        let water = Self.waterColor(t, light: light)
         context.fill(
             Path(rect),
             with: .linearGradient(
                 Gradient(colors: [
-                    Color(red: 0.055 * depthLight, green: 0.20 * depthLight, blue: 0.245 * depthLight),
-                    Color(red: 0.012 * deepLight, green: 0.055 * deepLight, blue: 0.11 * deepLight),
+                    Color(red: water.top.red, green: water.top.green, blue: water.top.blue),
+                    Color(red: water.bottom.red, green: water.bottom.green, blue: water.bottom.blue),
                 ]),
                 startPoint: .zero,
                 endPoint: CGPoint(x: 0, y: size.height)

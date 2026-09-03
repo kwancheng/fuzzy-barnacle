@@ -34,7 +34,14 @@ import os.log
 /// tones beat against each other, three swells a second, the way
 /// two large bodies breathing at once would sound — the piece's
 /// rarest sound. And when the passing ends, the tones go with
-/// them, and the water does not remember them.
+/// them, and the water does not remember them. And the sky's warm
+/// word — the turning, the hour the sky's light comes down warm —
+/// is a low warm wash in the water's voice: the sky's dark word is
+/// the rain, the sky's cold word is the glint, and the sky's warm
+/// word is the gild, and it is the sky's voice on the water's
+/// motion, the way the glint is — the moving water gilds, the
+/// still water does not — and when the turning turns to the day
+/// the wash is gone, and the water does not remember it.
 ///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
@@ -62,6 +69,7 @@ final class WaterVoice: ObservableObject {
     private var swishTarget: Double = 0
     private var deepTarget: Double = 0
     private var twinTarget: Double = 0
+    private var gildTarget: Double = 0
     private var cutoffTarget: Double = 500
 
     // The render state, touched only on the audio thread.
@@ -124,6 +132,17 @@ final class WaterVoice: ObservableObject {
     // large bodies breathing at once would sound
     private var twinPhase: Double = 0
     private var twinToneGain: Double = 0
+
+    // The sky's warm word: the gild — a low warm wash in the
+    // water's voice, present only while the sky's light is warm,
+    // the way the glint is present only while the moon's light is:
+    // the sky's dark word is the rain, the sky's cold word is the
+    // glint, and the sky's warm word is this. The wash is its own
+    // draw of the water's own noise, low-passed to a warm low band,
+    // and it eases toward the sky's warmth the way water eases
+    private var gildBrown: Double = 0
+    private var gildLow: Double = 0
+    private var gildGain: Double = 0
 
     /// The voice's own draw: a unit random, the way the water draws
     /// its motes
@@ -263,7 +282,10 @@ final class WaterVoice: ObservableObject {
     /// current is turning (the murmur), how much storm is over the
     /// water (the rain), the closing of the colony's shells where
     /// the storm tucks the colony in (the tuck), the glint where
-    /// the moon's light lies on the moving water, the swish where
+    /// the moon's light lies on the moving water, the gild where
+    /// the sky's light lies warm on the moving water — the sky's
+    /// warm word, its dark word being the rain and its cold word
+    /// the glint — the swish where
     /// the hand has been (the water's answer, heard), the low tone
     /// under the water where the deep one passes (a body's voice,
     /// the piece's first that is not the water's), and the twin's
@@ -272,27 +294,28 @@ final class WaterVoice: ObservableObject {
     /// sound), and how low the voice should sit (lower, in the
     /// water's night). The voice eases toward each of them, the
     /// way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
+    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
         tuckTarget = tuck
         glintTarget = glint
+        gildTarget = gild
         swishTarget = swish
         deepTarget = deep
         twinTarget = twin
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + tuck + glint + swish + deep + twin > 0.03
+        let isSpeaking = murmur + rain + tuck + glint + gild + swish + deep + twin > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, glintTarget, swishTarget, deepTarget, twinTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, glintTarget, gildTarget, swishTarget, deepTarget, twinTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -304,6 +327,10 @@ final class WaterVoice: ObservableObject {
         // where the deep voice sits: lower in the water's night,
         // the way a sleeper's voice is lower
         let cutoffAlpha = 1 - exp(-2 * .pi * target.cutoff / Double(format.sampleRate))
+        // where the gild sits: a fixed warm low band — the gild is
+        // a low-light thing, the way the sky's warmth is, and does
+        // not sink further in the night the way the deep voice does
+        let gildAlpha = 1 - exp(-2 * .pi * 380.0 / Double(format.sampleRate))
         // the colony's closing: the closings come and thicken with
         // the storm — sparse and far at the storm's stirring, a bed
         // of closings at its full — and still where there is no
@@ -337,6 +364,13 @@ final class WaterVoice: ObservableObject {
             let rainHiss = white - rainLow
             swishLow += 0.05 * (white - swishLow)
             let swishHiss = white - swishLow
+            // the gild: the sky's warm word — a low warm wash, the
+            // water's own noise drawn into its own slow memory and
+            // low-passed to the warm low band, present only while
+            // the sky's light is warm, the way the glint is present
+            // only while the moon's light is
+            gildBrown = (gildBrown + 0.02 * white) * 0.999
+            gildLow += gildAlpha * (gildBrown - gildLow)
             // the colony's closing: each of the colony's small
             // voices closes when it closes, at its own pace and its
             // own pitch — a shell that has closed, gone in a moment
@@ -419,17 +453,20 @@ final class WaterVoice: ObservableObject {
             // the voice eases toward what the water is doing, the
             // way water eases: the murmur slowly, the rain at the
             // storm's pace, the colony tucks in slowly, the sky
-            // glints slowly, the deep one's tone and the twin's
-            // tone slowly still, and the swish at the hand's
+            // glints slowly, the sky gilds slowly, the deep one's
+            // tone and the twin's tone slowly still, and the swish
+            // at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
             tuckGain += (target.tuck - tuckGain) * 0.004
             glintGain += (target.glint - glintGain) * 0.004
+            gildGain += (target.gild - gildGain) * 0.004
             swishGain += (target.swish - swishGain) * 0.05
             var out = murmurLow * murmurGain * 2.4
                 + rainHiss * rainGain * 1.2
                 + tuckSum * tuckGain * 1.2
                 + glintSum * glintGain * 1.2
+                + gildLow * gildGain * 1.2
                 + swishHiss * swishGain
                 + deepTone
                 + twinTone
@@ -442,7 +479,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, glint %f, deep %f, twin %f)", level, tuckGain, glintGain, deepToneGain, twinToneGain)
+            os_log("fb voice: level %f (tuck %f, glint %f, deep %f, twin %f, gild %f)", level, tuckGain, glintGain, deepToneGain, twinToneGain, gildGain)
         }
     }
 }
