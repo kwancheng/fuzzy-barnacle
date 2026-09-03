@@ -300,6 +300,15 @@ struct ContentView: View {
             glint: Self.glintGain(moon: moonNow, current: Self.tide(t).strength),
             gild: Self.gildGain(warmth: Self.skyWarmth(t), current: Self.tide(t).strength),
             roll: Self.rollGain(storm: stormNow, light: light),
+            // the quick ones' skitter: the piece's own small motion,
+            // heard — the current carrying the quick ones, a little
+            // more in the night the way the quick ones' light is,
+            // more in the storm the way the quick ones ride the
+            // storm — and the hand's answer to the quick ones: a
+            // moving hand parts them, and the quick ones, parted,
+            // skitter away, the way startled things skitter
+            skitter: Self.skitterGain(current: Self.tide(t).strength, light: light, storm: stormNow)
+                + Self.skitterStartle(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
             swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
             deep: Self.deepGain(deepNow),
             twin: Self.deepTwinGain(twinNow),
@@ -545,6 +554,11 @@ struct ContentView: View {
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
+                if let skitterLine = skitterLine(for: vnow) {
+                    Text(skitterLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
                 if let quietLine = quietLine(for: vnow) {
                     Text(quietLine)
                         .font(.system(.caption2, design: .serif).italic())
@@ -648,6 +662,29 @@ struct ContentView: View {
         return "the water hushes"
     }
 
+    /// The quick ones' skitter, as the caption keeps it. The quick
+    /// ones skitter always — the piece's own small motion, never
+    /// still — but the caption counts the rare, the way it counts
+    /// the deep: the skitter's loud corner, where the flood carries
+    /// the quick ones and the night keeps them bright and the storm
+    /// is over the water, the quick ones' storm hour, the way the
+    /// colony has its storm word and the sky has its storm word and
+    /// the quick ones have their skitter, and never in the calm,
+    /// where the skitter is under everything, the way the quick
+    /// ones are under everything, and the caption keeps its
+    /// silence about the always, the way the caption keeps its
+    /// silence about the water itself.
+    private func skitterLine(for now: Date) -> String? {
+        let t = now.timeIntervalSinceReferenceDate
+        let skitter = Self.skitterGain(
+            current: Self.tide(t).strength,
+            light: Self.drawnLight(t),
+            storm: Self.storm(t)
+        )
+        guard skitter >= 0.012 else { return nil }
+        return "the quick ones skitter"
+    }
+
     // MARK: - The Current
 
     /// The water is one body. A tide runs through it — slowly turning,
@@ -745,7 +782,13 @@ struct ContentView: View {
     /// They answer the hand the opposite way the colony does: the
     /// anchored turn toward it, tasting; the quick ones scatter from
     /// it. And when the hand is gone they drift back, and the water
-    /// does not remember the hand.
+    /// does not remember the hand. And now the piece hears them, the
+    /// way the piece hears everything: the quick ones' own small
+    /// voice — the skitter, high and brief, the quick ones' feet on
+    /// the water's surface, five small voices the way the quick ones
+    /// are five — kept in "The Voice" (skitterGain, and the hand's
+    /// answer to the quick ones, skitterStartle), the way the piece
+    /// keeps the water's.
 
     /// Five, no more: this water is not a school.
     private static let drifterCount = 5
@@ -1728,6 +1771,78 @@ struct ContentView: View {
     /// everything.
     static func rollGain(storm: Double, light: Double) -> Double {
         return 0.035 * storm * (0.6 + 0.4 * light)
+    }
+
+    /// The quick ones' skitter. The piece's account of its own
+    /// voices had kept the quick ones out: the water speaks — the
+    /// murmur, the rain, the swish, the hush — and the sky speaks
+    /// — the rain, the roll, the glint, the gild — and the colony
+    /// speaks — the closing, the opening — and the deep speaks —
+    /// the one low tone, the twin's a little above — but the
+    /// quick ones, the five small lives that ride the current and
+    /// never settle, had never once been heard, the way the
+    /// passing had never been heard, the way the passing is the
+    /// passing. Now they are heard: a skitter, high and brief and
+    /// small, the quick ones' feet on the water's surface. The
+    /// current is what carries them — the flood and the ebb carry
+    /// them more than the slack, the way the moving water carries
+    /// the quick ones and the still water does not — and a little
+    /// more in the night, the way the quick ones' light is a
+    /// little more in the night, the way the quick ones shine of
+    /// their own where the light is gone, and more in the storm,
+    /// the way the quick ones ride the storm: they ride
+    /// everything, the way the quick ones ride everything. And
+    /// the skitter never fully stops, the way the quick ones
+    /// never stop: at the slack it thins to its floor, the way
+    /// the still water glints less than the moving water — less,
+    /// not none — and where a body of the deep hushes the water
+    /// the skitter keeps its own pace through it, the way the
+    /// quick ones skim over what the water keeps thin, the way
+    /// the quick ones do not read the hush, the way the quick
+    /// ones keep their own. And the skitter keeps below the
+    /// colony's quiet word — the quick ones are small, the way
+    /// the quick ones are small — and keeps below the closing's
+    /// full, the way the small keeps below the large, the way
+    /// the piece keeps its own account of its own voices: the
+    /// closing is eight small voices, the glint is six grains,
+    /// the deep one is one voice, the opening is one, and the
+    /// quick ones are five, the way the quick ones are five.
+    static func skitterGain(current: Double, light: Double, storm: Double) -> Double {
+        // the quick ones ride the current: the tide's strength,
+        // which the water measures the way it measures anything —
+        // the moving water carries the quick ones, the still
+        // water does not; at the slack the skitter keeps its
+        // floor, the way the quick ones never stop
+        let motion = min(1, max(0, (current - 0.3) / 0.7))
+        // a little more in the night, the way the quick ones'
+        // light is a little more in the night — and more in the
+        // storm, the way the quick ones ride the storm
+        return 0.0085 * (0.3 + 0.7 * motion) * (1.3 - 0.3 * light) * (1 + 0.3 * storm)
+    }
+
+    /// The hand's answer to the quick ones, heard. A moving hand
+    /// parts the quick ones, the way it parts the water — and
+    /// the quick ones, parted, skitter away, the way startled
+    /// things skitter: the skitter thickens for a moment, the
+    /// way a scatter thickens, and settles back to the current's
+    /// pace, the way the quick ones drift back, and the water
+    /// does not remember the hand, the way it forgets
+    /// everything. A still hand parts them quietly: a still hand
+    /// is only a lamp, and a lamp is only light, and the quick
+    /// ones keep their pace under the lamp, the way the quick
+    /// ones keep their pace. The startle keeps below the quick
+    /// ones' own voice — the hand's answer keeps below the
+    /// quick ones' skitter, the way the hand's answers keep
+    /// below the water's — and it runs on the world's time, the
+    /// way the hand's other answers do: it is the hand the water
+    /// knows, not the clock the water keeps.
+    static func skitterStartle(speed: Double, age: Double) -> Double {
+        // the startle is the hand's, not the quick ones': a
+        // still hand startles none, a fast hand startles most
+        let stirred = min(1, speed / 450)
+        // quick to come, slow to go, gone within a few seconds —
+        // and not remembered, the way the water forgets the hand
+        return 0.004 * stirred * exp(-max(0, age) * 0.7)
     }
 
     // MARK: - Virtual Time

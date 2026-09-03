@@ -84,6 +84,30 @@ import os.log
 /// way it forgets everything.
 ///
 /// The voice is made, not played: noise the water itself draws,
+/// And the quick ones — the five small lives that ride the
+/// current and never settle, the piece's own small motion — have
+/// their own voice at last: the skitter, high and brief and
+/// small, the quick ones' feet on the water's surface, five small
+/// voices the way the quick ones are five — the closing is eight
+/// small voices, the glint is six grains, the deep one is one,
+/// the opening is one, and the quick ones are five. The skitter
+/// turns with the current — the flood and the ebb carry the quick
+/// ones more than the slack — and is a little more in the night,
+/// the way the quick ones' light is a little more in the night,
+/// and more in the storm, the way the quick ones ride the storm,
+/// the way the quick ones ride everything; and it never fully
+/// stops, the way the quick ones never stop: at the slack it
+/// thins to its floor, less, not none, the way the still water
+/// glints less than the moving water. And a moving hand parts the
+/// quick ones, and the quick ones, parted, skitter away — the
+/// skitter thickens for a moment, the way a scatter thickens, and
+/// settles back to the current's pace, and the water does not
+/// remember the hand, the way it forgets everything. The skitter
+/// keeps below the colony's quiet word, and keeps below the
+/// closing's full, the way the small keeps below the large, the
+/// way the piece keeps its own account of its own voices.
+///
+/// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
 /// is a recording; everything in it is the water.
 final class WaterVoice: ObservableObject {
@@ -129,6 +153,18 @@ final class WaterVoice: ObservableObject {
     // so the tone is heard above the roll, the way the body's
     // voice is the body's
     private var rollTarget: Double = 0
+    // The quick ones' skitter: the piece's own small motion,
+    // heard — the quick ones' feet on the water's surface, five
+    // small voices the way the quick ones are five: turns with the
+    // current, a little more in the night the way the quick ones'
+    // light is, more in the storm the way the quick ones ride the
+    // storm, and never fully still, the way the quick ones never
+    // stop. The piece tells the voice the skitter's gain, the
+    // startle included: a moving hand parts the quick ones, and
+    // the quick ones, parted, skitter away, the way startled
+    // things skitter, and settle back, and the water does not
+    // remember the hand
+    private var skitterTarget: Double = 0
     // The hush: not a voice of the water's making, but the water's
     // own voice thinned where a body of the deep is in the water —
     // the piece tells the voice how hushed the water's own speech
@@ -203,6 +239,31 @@ final class WaterVoice: ObservableObject {
     }
     private var opener = Opener(baseFreq: 850, freq: 850, phase: 0, tail: 0, age: 0, nextIn: 0, pulsed: false)
     private var openGain: Double = 0
+
+    // The quick ones' skitter: five small high voices, one per
+    // quick one, the way the quick ones are five — the closing is
+    // eight small voices, the glint is six grains, the deep one is
+    // one, the opening is one, and the quick ones are five. Each
+    // skitters when it skitters, at its own pace and its own
+    // pitch, the way no two of the quick ones are the same: a
+    // small tick, high and brief — the quick ones' feet on the
+    // water's surface, gone in a moment, the way the quick ones'
+    // motion is. The quick ones never stop, so the skitter never
+    // stops either: it thins at the slack, the way
+    // the moving water glints less than the still water — less,
+    // not none — and thickens in the flood, in the night, in the
+    // storm, and for a moment where a moving hand has parted the
+    // quick ones, the way a scatter thickens
+    private struct Skitterer {
+        var baseFreq: Double
+        var freq: Double
+        var phase: Double
+        var env: Double
+        var nextIn: Int
+        var weight: Double
+    }
+    private var skitterers: [Skitterer] = []
+    private var skitterGain: Double = 0
 
     // The deep one's voice: the piece's first voice that is not
     // the water's — the water's voices are made of the water's
@@ -290,6 +351,22 @@ final class WaterVoice: ObservableObject {
         // pace — the next opening is somewhere in the first second,
         // and no earlier
         opener.nextIn = Int(drawRng() * 44_100)
+        // the quick ones' skitter: five small high voices, one per
+        // quick one, the way the quick ones are five — higher and
+        // shorter still than the glint's grains: the quick ones'
+        // feet, the way the quick ones are the piece's smallest
+        // motion, and the skitter the piece's smallest voice
+        for _ in 0..<5 {
+            let f = drawRng()
+            skitterers.append(Skitterer(
+                baseFreq: 5500 + 3000 * f,
+                freq: 5500 + 3000 * f,
+                phase: 0,
+                env: 0,
+                nextIn: Int(drawRng() * 44_100),
+                weight: 0.7 + 0.3 * drawRng()
+            ))
+        }
     }
 
     // The voice's own quiet thread: the water's audio service is
@@ -403,13 +480,21 @@ final class WaterVoice: ObservableObject {
     /// voice is in the deep: the sky's word, kept below the
     /// body's, so where the two are together the rarest weather is
     /// heard at its bottom, and the tone is heard above it — the
+    /// skitter — the quick ones' feet on the water's surface, the
+    /// piece's own small motion, heard: five small voices the way
+    /// the quick ones are five, turning with the current, a little
+    /// more in the night the way the quick ones' light is, more in
+    /// the storm the way the quick ones ride the storm — and the
+    /// startle, a moving hand's parting of the quick ones, the
+    /// quick ones skittering away and settling back, the way
+    /// startled things skitter — the
     /// hush — how much of the water's own speech is
     /// thinned where a body of the deep is in the water: the murmur
     /// arrives already thinned, and the hush is kept as the piece's
     /// own account of it, the way the piece keeps the water's — and
     /// how low the voice should sit (lower, in the water's night).
     /// The voice eases toward each of them, the way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    func update(murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, skitter: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
@@ -419,22 +504,23 @@ final class WaterVoice: ObservableObject {
         glintTarget = glint
         gildTarget = gild
         rollTarget = roll
+        skitterTarget = skitter
         swishTarget = swish
         deepTarget = deep
         twinTarget = twin
         hushTarget = hush
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + tuck + opening + glint + gild + roll + swish + deep + twin > 0.03
+        let isSpeaking = murmur + rain + tuck + opening + glint + gild + roll + skitter + swish + deep + twin > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, skitter: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, openTarget, openPulseTarget, glintTarget, gildTarget, rollTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, openTarget, openPulseTarget, glintTarget, gildTarget, rollTarget, skitterTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -473,10 +559,20 @@ final class WaterVoice: ObservableObject {
         // not, the way the sky is still most of the time
         let glintDensity = min(1, target.glint / 0.03)
         let glintMean = 0.5 + 2.5 * pow(1 - glintDensity, 3)
+        // the quick ones' skitter: the quick ones never stop, so
+        // the skitter never stops either — sparse and far at the
+        // slack, where the skitter keeps its floor, the way the
+        // still water glints less than the moving water: less, not
+        // none — and thickening with the current, with the night,
+        // with the storm, and for a moment where a moving hand has
+        // parted the quick ones, the way a scatter thickens
+        let skitterDensity = min(1, target.skitter / 0.0143)
+        let skitterMean = 0.35 + 1.45 * pow(1 - skitterDensity, 3)
 
         var sum: Double = 0
         var tuckSum: Double = 0
         var glintSum: Double = 0
+        var skitterSum: Double = 0
         for frame in 0..<Int(frameCount) {
             // the water's own noise: a draw of white, remembered
             // into brown
@@ -550,6 +646,31 @@ final class WaterVoice: ObservableObject {
                 g.env *= 0.988
                 glintSum += sin(g.phase) * g.env * g.weight
                 glinters[gi] = g
+            }
+            // the quick ones' skitter: each of the quick ones
+            // skitters when it skitters, at its own pace and its
+            // own pitch — a small tick, high and brief, the quick
+            // ones' feet on the water's surface, gone in a moment,
+            // the way no two of the quick ones are the same: the
+            // quick ones are five, and the skitter is five, the
+            // way the quick ones are five
+            for si in skitterers.indices {
+                var sk = skitterers[si]
+                sk.nextIn -= 1
+                if sk.nextIn <= 0 {
+                    sk.env = 1
+                    sk.phase = 0
+                    let jitter = 0.4 + drawRng()
+                    sk.nextIn = max(441, Int(Double(format.sampleRate) * skitterMean * jitter))
+                    // each skitter is slightly off the last, the
+                    // way no two of the quick ones are the same
+                    sk.freq = sk.baseFreq * (0.97 + 0.06 * drawRng())
+                }
+                sk.phase += 2 * .pi * sk.freq / Double(format.sampleRate)
+                if sk.phase >= 4 * .pi { sk.phase -= 4 * .pi }
+                sk.env *= 0.995
+                skitterSum += sin(sk.phase) * sk.env * sk.weight
+                skitterers[si] = sk
             }
             // the colony's opening: its one opening voice opens
             // when it opens, at its own pace and its own pitch —
@@ -638,9 +759,11 @@ final class WaterVoice: ObservableObject {
             // opens slowly — the calm's word is a slow one, the
             // way a calm is slow — the sky glints slowly, the sky
             // gilds slowly, the sky's dark word rolls slowly still
-            // — a bottom moves the way a bottom moves — the deep
-            // one's tone and the twin's tone slowly still, and the
-            // swish at the hand's
+            // — a bottom moves the way a bottom moves — the quick
+            // ones skitter at their own pace, five small voices
+            // the way the quick ones are five — the deep one's
+            // tone and the twin's tone slowly still, and the swish
+            // at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
             tuckGain += (target.tuck - tuckGain) * 0.004
@@ -648,6 +771,11 @@ final class WaterVoice: ObservableObject {
             glintGain += (target.glint - glintGain) * 0.004
             gildGain += (target.gild - gildGain) * 0.004
             rollGain += (target.roll - rollGain) * 0.002
+            // the quick ones' skitter: the quick ones' own pace —
+            // a small voice eases the way a small voice eases, and
+            // the startle settles back the way a scatter settles
+            // back, the way the quick ones drift back
+            skitterGain += (target.skitter - skitterGain) * 0.003
             // the roll's own rolling: two incommensurate swells —
             // the roll comes and goes within the storm, the way a
             // storm comes and goes within itself — and within the
@@ -663,6 +791,10 @@ final class WaterVoice: ObservableObject {
                 + glintSum * glintGain * 1.2
                 + gildLow * gildGain * 1.2
                 + rollLow * rollGain * rollSwell * 1.2
+                // the quick ones' skitter: the piece's smallest
+                // voice, kept smallest in the mix, the way the
+                // quick ones are the piece's smallest motion
+                + skitterSum * skitterGain * 0.8
                 + swishHiss * swishGain
                 + deepTone
                 + twinTone
@@ -675,7 +807,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, open %f, glint %f, roll %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, openGain, glintGain, rollGain, deepToneGain, twinToneGain, gildGain, target.hush)
+            os_log("fb voice: level %f (tuck %f, open %f, glint %f, roll %f, skit %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, openGain, glintGain, rollGain, skitterGain, deepToneGain, twinToneGain, gildGain, target.hush)
         }
     }
 }

@@ -1330,4 +1330,179 @@ struct Fuzzy_BarnacleTests {
         #expect(ContentView.bloomChime(4) < 0.001, "the chime is gone within a few seconds, and not remembered")
     }
 
+    // The quick ones' skitter: the quick ones' feet on the
+    // water's surface. The closing is eight small voices, the
+    // glint is six grains, the deep one is one, the opening is
+    // one — and the quick ones are five. The skitter turns with
+    // the current, is a little more in the night, the way the
+    // quick ones' light is a little more in the night, and more
+    // in the storm, the way the quick ones ride the storm; and a
+    // moving hand parts the quick ones, and the quick ones,
+    // parted, skitter away, and settle back, and the water does
+    // not remember the hand, the way it forgets everything.
+
+    @Test func theQuickOnesAreHeardInTheCurrent() {
+        // the quick ones ride the current: the moving water
+        // carries the quick ones, the still water does not — but
+        // the quick ones never stop, so the skitter never stops
+        // either: at the slack it thins to its floor, the way the
+        // still water glints less than the moving water — less,
+        // not none
+        let floor = ContentView.skitterGain(current: 0.3, light: 1, storm: 0)
+        #expect(floor > 0.002 && floor < 0.003, "at the slack the skitter keeps its floor: the quick ones never stop")
+        for l in stride(from: 0.0, through: 1.0, by: 0.1) {
+            for s in stride(from: 0.0, through: 1.0, by: 0.1) {
+                #expect(
+                    ContentView.skitterGain(current: 1.0, light: l, storm: s) > ContentView.skitterGain(current: 0.3, light: l, storm: s),
+                    "the flood carries the quick ones more than the slack"
+                )
+            }
+        }
+        // a little more in the night, the way the quick ones'
+        // light is a little more in the night
+        #expect(
+            ContentView.skitterGain(current: 1, light: 0, storm: 0) > ContentView.skitterGain(current: 1, light: 1, storm: 0),
+            "a little more in the night, the way the quick ones' light is a little more in the night"
+        )
+        // the skitter is the piece's smallest voice: it keeps
+        // small, the way the quick ones are the piece's smallest
+        // motion
+        for c in stride(from: 0.3, through: 1.0, by: 0.05) {
+            for l in stride(from: 0.0, through: 1.0, by: 0.1) {
+                for s in stride(from: 0.0, through: 1.0, by: 0.1) {
+                    let v = ContentView.skitterGain(current: c, light: l, storm: s)
+                    #expect(v >= 0.0025 && v <= 0.0145, "the skitter is a small voice, the way the quick ones are small")
+                }
+            }
+        }
+    }
+
+    @Test func theQuickOnesKeepBelowTheQuietWords() {
+        // the quick ones are small, the way the quick ones are
+        // small: in the calm the skitter keeps below the colony's
+        // quiet word, and at its corner it keeps below the
+        // closing's full — the small keeps below the large, the
+        // way the sky's word keeps below the body's
+        for l in stride(from: 0.0, through: 1.0, by: 0.1) {
+            #expect(
+                ContentView.skitterGain(current: 1, light: l, storm: 0) <= ContentView.openingGain(storm: 0) + 0.000_001,
+                "in the calm the skitter keeps below the colony's quiet word"
+            )
+        }
+        #expect(
+            ContentView.skitterGain(current: 1, light: 0, storm: 1) < ContentView.tuckGain(storm: 1),
+            "at its corner the skitter keeps below the closing's full"
+        )
+        // the startle — the hand's answer to the quick ones —
+        // keeps below the quick ones' own voice, the way the
+        // hand's answers keep below the water's: and skitter and
+        // startle together keep below the closing's full, the way
+        // the piece keeps its own account of its own voices
+        #expect(
+            ContentView.skitterStartle(speed: 450, age: 0) < ContentView.skitterGain(current: 1, light: 0, storm: 0),
+            "the startle keeps below the quick ones' own voice"
+        )
+        #expect(
+            ContentView.skitterGain(current: 1, light: 0, storm: 1) + ContentView.skitterStartle(speed: 450, age: 0) < ContentView.tuckGain(storm: 1),
+            "the skitter and the startle together keep below the closing's full"
+        )
+    }
+
+    @Test func theMovingHandStartlesTheQuickOnes() {
+        // the startle is the hand's, not the quick ones': a still
+        // hand startles none, a moving hand startles — quick to
+        // come, slow to go, gone within a few seconds — and then
+        // the quick ones settle back to the current's pace, and
+        // the water does not remember the hand, the way it
+        // forgets everything
+        #expect(ContentView.skitterStartle(speed: 0, age: 0) == 0, "a still hand startles none: a still hand is only a lamp")
+        #expect(
+            ContentView.skitterStartle(speed: 225, age: 0) < ContentView.skitterStartle(speed: 450, age: 0),
+            "a fast hand startles most"
+        )
+        var prev = ContentView.skitterStartle(speed: 450, age: 0)
+        for i in 1...8 {
+            let v = ContentView.skitterStartle(speed: 450, age: Double(i))
+            #expect(v < prev + 0.000_001, "the startle settles back to the current's pace, the way the quick ones drift back")
+            prev = v
+        }
+        #expect(ContentView.skitterStartle(speed: 450, age: 8) < 0.0001, "gone within a few seconds, and not remembered")
+    }
+
+    @Test func theQuickOnesSkitterInTheRain() {
+        // the quick ones ride the storm, the way the quick ones
+        // ride everything: the skitter thickens in the rain — and
+        // at every second of the rarest weather the skitter is
+        // present: the rarest weather is heard at its bottom, the
+        // way it is heard at its surface, where the quick ones'
+        // feet are
+        for l in stride(from: 0.0, through: 1.0, by: 0.1) {
+            #expect(
+                ContentView.skitterGain(current: 1, light: l, storm: 1) > ContentView.skitterGain(current: 1, light: l, storm: 0),
+                "the quick ones ride the storm, the way the quick ones ride everything"
+            )
+        }
+        // a year of the water's clock: the rarest weather — the
+        // sky's dark word over both bodies — and at every one of
+        // its seconds the skitter is present; and the skitter's
+        // loud corner, the corner the caption counts, is a small
+        // part of the year, the way the rare is a small part of
+        // the always
+        var tripleSeconds = 0
+        var skitterMissing = 0
+        var loudSeconds = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            let s = ContentView.storm(t)
+            guard s > 0.5 else { continue }
+            let sk = ContentView.skitterGain(current: ContentView.tide(t).strength, light: ContentView.drawnLight(t), storm: s)
+            if sk >= 0.012 { loudSeconds += 1 }
+            guard ContentView.deep(t) > 0.5, ContentView.deepTwin(t) > 0.5 else { continue }
+            tripleSeconds += 1
+            if sk < 0.0025 {
+                skitterMissing += 1
+            }
+        }
+        #expect(tripleSeconds > 0 && tripleSeconds < 100, "the rarest weather is a matter of seconds in a year")
+        #expect(
+            skitterMissing == 0,
+            "at every second of the rarest weather the quick ones' skitter is present, the way the rarest weather is heard at its surface"
+        )
+        #expect(loudSeconds > 5_000, "the skitter's loud corner comes: the night, the flood, and the storm's stirring")
+        #expect(loudSeconds < 1_000_000, "the loud corner is a small part of the water's year, the way the rare is a small part of the always")
+    }
+
+    @Test func theQuickOnesDoNotReadTheHush() {
+        // the hush is the body's taking-away, on the water's own
+        // voice only: the murmur thins where the body is, the way
+        // the water's own words thin — but the quick ones'
+        // skitter is not the water's voice: the quick ones skim
+        // over what the water keeps thin, the way the quick ones
+        // keep their own. Over a year of the water's clock the
+        // body's hush is there, and at every one of its seconds
+        // the quick ones' skitter is at its floor — the hush
+        // takes from the water's own voice, and never from the
+        // quick ones'
+        var hushSeconds = 0
+        var skitterKeepsItsFloor = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            guard ContentView.hushGain(deep: ContentView.deep(t), twin: ContentView.deepTwin(t), t: t) > 0.05 else { continue }
+            hushSeconds += 1
+            let sk = ContentView.skitterGain(
+                current: ContentView.tide(t).strength,
+                light: ContentView.drawnLight(t),
+                storm: ContentView.storm(t)
+            )
+            if sk >= 0.0025 {
+                skitterKeepsItsFloor += 1
+            }
+        }
+        #expect(hushSeconds > 50_000, "the water does hush: a small part of the water's year, on the bodies' own rarity")
+        #expect(
+            skitterKeepsItsFloor == hushSeconds,
+            "the quick ones' skitter keeps its own pace through the hush, the way the quick ones do not read the hush"
+        )
+    }
+
 }
