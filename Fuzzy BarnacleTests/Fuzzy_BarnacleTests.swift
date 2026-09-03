@@ -1132,4 +1132,111 @@ struct Fuzzy_BarnacleTests {
         #expect(again > 0.9 * own, "off the water the hush goes with the body, and the water speaks again")
     }
 
+    // The sky's dark word has a low end: the roll under the rain.
+    // The rain — the sky's dark word — falls on the surface, and
+    // the sky's other words are words of the surface still: the
+    // glint, high grains of the moon's light, the gild, a warm low
+    // band of the turning. The deep, the water's bottom, has the
+    // body's voice — the deep one's low tone, the twin's a little
+    // above — and the sky's word never reaches it. The roll is the
+    // sky's dark word's low end: the storm's voice in the deep,
+    // and where the storm is over the water and a body of the deep
+    // is under it, the sky's word and the body's word sound in the
+    // same deep — the rarest weather heard at its bottom.
+
+    @Test func theSkysDarkWordHasALowEnd() {
+        // the roll is the storm's, not the water's: where there is
+        // no storm there is no low end, the way there is no rain
+        // where there is no storm
+        #expect(ContentView.rollGain(storm: 0, light: 1) == 0, "without the storm the sky's dark word has no low end")
+        #expect(ContentView.rollGain(storm: 0, light: 0) == 0)
+        // the low end never drowns the surface's own voice: the
+        // roll stays below the rain, the way a bottom stays below
+        // the surface
+        for s in stride(from: 0.0, through: 1.0, by: 0.05) {
+            for l in stride(from: 0.0, through: 1.0, by: 0.1) {
+                #expect(
+                    ContentView.rollGain(storm: s, light: l) <= ContentView.rainGain(storm: s, light: l),
+                    "the low end never exceeds the surface's own voice"
+                )
+            }
+        }
+        // a little less in the night, the way the rain is a little
+        // less in the night
+        #expect(ContentView.rollGain(storm: 1, light: 0) < ContentView.rollGain(storm: 1, light: 1))
+        // the low end keeps below the body's own voice: the sky's
+        // word stays under the body's word, so the tone is heard
+        // above the roll, the way the body's voice is the body's
+        #expect(
+            ContentView.rollGain(storm: 1, light: 1) < ContentView.deepGain(1),
+            "the sky's low end keeps below the body's voice"
+        )
+    }
+
+    @Test func theRarestWeatherIsHeardAtItsBottom() {
+        // the sky's dark word and the deep's bodies: over a year
+        // of the water's clock the storm is over the deep one for
+        // a small part of the time only, and over both bodies at
+        // once for a rarer still — a matter of seconds in a year
+        // — and at every one of those seconds the low end is with
+        // the sky's dark word: the rarest weather is heard at its
+        // bottom, the way the rarest moment is seen from above
+        var meetingSeconds = 0
+        var tripleSeconds = 0
+        var lowEndMissing = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            let s = ContentView.storm(t)
+            guard s > 0.5 else { continue }
+            let d = ContentView.deep(t)
+            guard d > 0.5 else { continue }
+            meetingSeconds += 1
+            if ContentView.deepTwin(t) > 0.5 {
+                tripleSeconds += 1
+            }
+            if ContentView.rollGain(storm: s, light: ContentView.drawnLight(t)) <= 0 {
+                lowEndMissing += 1
+            }
+        }
+        #expect(meetingSeconds > 10_000, "the storm does find the deep one — rarely, but it comes")
+        #expect(meetingSeconds < 3_200_000, "the finding is a rare one: under a tenth of the water's year")
+        #expect(
+            lowEndMissing == 0,
+            "where the sky's dark word is over the deep, its low end is with it — the rarest weather is heard at its bottom"
+        )
+        #expect(tripleSeconds > 0, "the sky's dark word does come over both of them — the rarest of times")
+        #expect(tripleSeconds < 100, "the dark word over both bodies is a matter of seconds in a year")
+    }
+
+    @Test func theSkyDoesNotReadTheHush() {
+        // the hush is the body's taking-away, on the water's own
+        // voice only: the murmur thins where the body is, the way
+        // the water's own words thin — but the sky's word is not
+        // the water's word, and the sky's dark word's low end
+        // keeps its own pace through the hush, the way the rain
+        // keeps falling: over a year of the water's clock the
+        // body's hush and the sky's dark word do meet — the body
+        // in the water, the storm over it — and at every one of
+        // those seconds the roll is still there, the sky's word
+        // the sky's
+        var hushStormSeconds = 0
+        var rollStillThere = 0
+        for i in stride(from: 0, to: 31_536_000, by: 1) {
+            let t = Double(i)
+            guard ContentView.storm(t) > 0.5 else { continue }
+            let d = ContentView.deep(t)
+            let tw = ContentView.deepTwin(t)
+            guard ContentView.hushGain(deep: d, twin: tw, t: t) > 0.05 else { continue }
+            hushStormSeconds += 1
+            if ContentView.rollGain(storm: ContentView.storm(t), light: ContentView.drawnLight(t)) > 0 {
+                rollStillThere += 1
+            }
+        }
+        #expect(hushStormSeconds > 5_000, "the body's hush and the sky's dark word do meet: the body in the water, the storm over it")
+        #expect(
+            rollStillThere == hushStormSeconds,
+            "the sky's dark word's low end keeps its own pace through the hush, the way the rain keeps falling"
+        )
+    }
+
 }

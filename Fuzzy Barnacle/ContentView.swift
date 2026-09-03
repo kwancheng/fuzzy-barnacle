@@ -233,6 +233,7 @@ struct ContentView: View {
             tuck: Self.tuckGain(storm: stormNow),
             glint: Self.glintGain(moon: moonNow, current: Self.tide(t).strength),
             gild: Self.gildGain(warmth: Self.skyWarmth(t), current: Self.tide(t).strength),
+            roll: Self.rollGain(storm: stormNow, light: light),
             swish: Self.handSwish(speed: handSpeed, age: max(0, now.timeIntervalSince(handSpeedAt))),
             deep: Self.deepGain(deepNow),
             twin: Self.deepTwinGain(twinNow),
@@ -1471,7 +1472,15 @@ struct ContentView: View {
     /// sky's voice in its cold hour: the moving water gilds, the
     /// still water does not — and when the turning turns to the day
     /// the wash is gone, and the water does not remember the
-    /// warmth, the way it forgets everything.
+    /// warmth, the way it forgets everything. And the sky's dark
+    /// word has a low end — the roll under the rain: the storm's
+    /// voice in the deep, very low and very slow, rolling within
+    /// the storm the way a storm rolls within itself; and where
+    /// the sky's dark word is over the water and a body of the
+    /// deep is under it, the sky's word and the body's word sound
+    /// in the same deep — the rarest weather heard at its bottom —
+    /// and when the storm passes the roll goes with it, and the
+    /// water does not remember it, the way it forgets everything.
 
     /// How much of the water's low voice is up at a moment: the
     /// voice is the *turning* of the current — the change of the
@@ -1555,6 +1564,37 @@ struct ContentView: View {
         // moving water gilds, the still water does not
         let motion = min(1, max(0, (current - 0.3) / 0.7))
         return 0.04 * warmth * (0.30 + 0.70 * motion)
+    }
+
+    /// The sky's dark word has a low end. The rain — the sky's
+    /// dark word — falls on the surface, hissed into the high, the
+    /// way falling is; and the sky's other words are words of the
+    /// surface still: the glint, high grains of the moon's light,
+    /// the gild, a warm low band of the turning. The deep, the
+    /// water's bottom, has the body's voice — the deep one's low
+    /// tone, the twin's a little above — and the sky's word never
+    /// reaches it. But a storm is a body of weather, and a body
+    /// has a bottom, the way the sea has a bottom: under the rain
+    /// there is the roll — very low, very slow, the storm's voice
+    /// in the deep. It is the sky's, not the deep's: the sky does
+    /// not read the body, the way the body does not read the
+    /// sky's word — and where the storm is over the water and a
+    /// body of the deep is under it, the sky's word and the
+    /// body's word sound in the same deep, the rarest weather
+    /// heard at its bottom: the meeting is not made, it comes of
+    /// two voices at once, the way it comes of two bodies at
+    /// once. The low end never drowns the surface's own voice —
+    /// the roll stays far below the rain, the way a bottom is
+    /// below the surface — and it keeps below the body's own
+    /// voice, the way the sky's word keeps below the body's: the
+    /// tone is heard above the roll, the way the body's voice is
+    /// the body's. A little less in the night, the way the rain
+    /// is a little less in the night. And when the storm passes
+    /// the roll goes with it, and the water is the water again,
+    /// and does not remember the roll, the way it forgets
+    /// everything.
+    static func rollGain(storm: Double, light: Double) -> Double {
+        return 0.035 * storm * (0.6 + 0.4 * light)
     }
 
     // MARK: - Virtual Time

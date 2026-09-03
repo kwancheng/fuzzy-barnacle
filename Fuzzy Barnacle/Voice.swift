@@ -54,7 +54,23 @@ import os.log
 /// is gone, the way everything is. The hush is on the water's own
 /// voice only: the rain keeps falling, the way rain keeps falling
 /// on a stone, and the body's own tone keeps its own breath through
-/// the hush, the way the body does not read the sky's word.
+/// the hush, the way the body does not read the sky's word. And
+/// the sky's dark word has a low end: the rain falls on the
+/// surface, hissed into the high, but a storm is a body of
+/// weather, and a body has a bottom, the way the sea has a bottom
+/// — under the rain there is the roll, very low and very slow,
+/// the storm's voice in the deep, rolling within the storm the
+/// way a storm rolls within itself. It is the sky's word, not the
+/// deep's: the sky does not read the body, the way the body does
+/// not read the sky's word — and where the storm is over the
+/// water and a body of the deep is under it, the sky's word and
+/// the body's word sound in the same deep, the rarest weather
+/// heard at its bottom: the meeting is not made, it comes of two
+/// voices at once, the way it comes of two bodies at once, and
+/// the body's own low tone is heard above the roll, the way the
+/// sky's word keeps below the body's. And when the storm passes
+/// the roll goes with it, and the water does not remember it, the
+/// way it forgets everything.
 ///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
@@ -83,6 +99,16 @@ final class WaterVoice: ObservableObject {
     private var deepTarget: Double = 0
     private var twinTarget: Double = 0
     private var gildTarget: Double = 0
+    // The roll: the low end of the sky's dark word — the storm's
+    // voice in the deep, under the rain, very low and very slow,
+    // the way a storm's voice is in the deep. The sky's word, not
+    // the body's: where the dark word is over the water and a body
+    // of the deep is under it, the sky's word and the body's word
+    // sound in the same deep, the rarest weather heard at its
+    // bottom — and the low end keeps below the body's own voice,
+    // so the tone is heard above the roll, the way the body's
+    // voice is the body's
+    private var rollTarget: Double = 0
     // The hush: not a voice of the water's making, but the water's
     // own voice thinned where a body of the deep is in the water —
     // the piece tells the voice how hushed the water's own speech
@@ -161,6 +187,14 @@ final class WaterVoice: ObservableObject {
     private var gildBrown: Double = 0
     private var gildLow: Double = 0
     private var gildGain: Double = 0
+
+    // The roll's own draw of the water's noise: the low end is a
+    // bottom, and a bottom is its own water — drawn into its own
+    // slow memory and low-passed to the deep, the way the deep
+    // keeps
+    private var rollBrown: Double = 0
+    private var rollLow: Double = 0
+    private var rollGain: Double = 0
 
     /// The voice's own draw: a unit random, the way the water draws
     /// its motes
@@ -309,35 +343,41 @@ final class WaterVoice: ObservableObject {
     /// the piece's first that is not the water's), and the twin's
     /// tone, a little above it (its body's voice — and where the
     /// two are together, the two tones beat, the piece's rarest
-    /// sound), the hush — how much of the water's own speech is
+    /// sound), the roll — the low end of the sky's dark word, the
+    /// storm's voice in the deep under the rain, the way a storm's
+    /// voice is in the deep: the sky's word, kept below the
+    /// body's, so where the two are together the rarest weather is
+    /// heard at its bottom, and the tone is heard above it — the
+    /// hush — how much of the water's own speech is
     /// thinned where a body of the deep is in the water: the murmur
     /// arrives already thinned, and the hush is kept as the piece's
     /// own account of it, the way the piece keeps the water's — and
     /// how low the voice should sit (lower, in the water's night).
     /// The voice eases toward each of them, the way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
         tuckTarget = tuck
         glintTarget = glint
         gildTarget = gild
+        rollTarget = roll
         swishTarget = swish
         deepTarget = deep
         twinTarget = twin
         hushTarget = hush
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + tuck + glint + gild + swish + deep + twin > 0.03
+        let isSpeaking = murmur + rain + tuck + glint + gild + roll + swish + deep + twin > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, glintTarget, gildTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, glintTarget, gildTarget, rollTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -353,6 +393,10 @@ final class WaterVoice: ObservableObject {
         // a low-light thing, the way the sky's warmth is, and does
         // not sink further in the night the way the deep voice does
         let gildAlpha = 1 - exp(-2 * .pi * 380.0 / Double(format.sampleRate))
+        // where the roll sits: the deep — the low end is a bottom,
+        // and a bottom is low, lower still than the deep one's
+        // tone, so the body's voice is heard above it
+        let rollAlpha = 1 - exp(-2 * .pi * 90.0 / Double(format.sampleRate))
         // the colony's closing: the closings come and thicken with
         // the storm — sparse and far at the storm's stirring, a bed
         // of closings at its full — and still where there is no
@@ -393,6 +437,14 @@ final class WaterVoice: ObservableObject {
             // only while the moon's light is
             gildBrown = (gildBrown + 0.02 * white) * 0.999
             gildLow += gildAlpha * (gildBrown - gildLow)
+            // the roll: the low end of the sky's dark word — the
+            // storm's voice in the deep, under the rain, the way a
+            // storm's voice is in the deep; its own draw of the
+            // water's noise, remembered into its own slow memory
+            // and low-passed to the bottom, the way the bottom
+            // keeps
+            rollBrown = (rollBrown + 0.02 * white) * 0.999
+            rollLow += rollAlpha * (rollBrown - rollLow)
             // the colony's closing: each of the colony's small
             // voices closes when it closes, at its own pace and its
             // own pitch — a shell that has closed, gone in a moment
@@ -475,20 +527,30 @@ final class WaterVoice: ObservableObject {
             // the voice eases toward what the water is doing, the
             // way water eases: the murmur slowly, the rain at the
             // storm's pace, the colony tucks in slowly, the sky
-            // glints slowly, the sky gilds slowly, the deep one's
-            // tone and the twin's tone slowly still, and the swish
-            // at the hand's
+            // glints slowly, the sky gilds slowly, the sky's dark
+            // word rolls slowly still — a bottom moves the way a
+            // bottom moves — the deep one's tone and the twin's
+            // tone slowly still, and the swish at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
             tuckGain += (target.tuck - tuckGain) * 0.004
             glintGain += (target.glint - glintGain) * 0.004
             gildGain += (target.gild - gildGain) * 0.004
+            rollGain += (target.roll - rollGain) * 0.002
+            // the roll's own rolling: two incommensurate swells —
+            // the roll comes and goes within the storm, the way a
+            // storm comes and goes within itself — and within the
+            // storm it never fully goes quiet, the way a storm
+            // never fully goes quiet: the lull keeps its low hum
+            let rollSwell = 0.3 + 0.7 * (0.5 + 0.5 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 5.3) + 1.7)
+                * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 13.9) + 0.4))
             swishGain += (target.swish - swishGain) * 0.05
             var out = murmurLow * murmurGain * 2.4
                 + rainHiss * rainGain * 1.2
                 + tuckSum * tuckGain * 1.2
                 + glintSum * glintGain * 1.2
                 + gildLow * gildGain * 1.2
+                + rollLow * rollGain * rollSwell * 1.2
                 + swishHiss * swishGain
                 + deepTone
                 + twinTone
@@ -501,7 +563,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, glint %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, glintGain, deepToneGain, twinToneGain, gildGain, target.hush)
+            os_log("fb voice: level %f (tuck %f, glint %f, roll %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, glintGain, rollGain, deepToneGain, twinToneGain, gildGain, target.hush)
         }
     }
 }
