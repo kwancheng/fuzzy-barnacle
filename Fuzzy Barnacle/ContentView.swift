@@ -44,7 +44,17 @@ import SwiftData
 /// closes its shells, there is a granular voice, made of the
 /// colony itself — sparse and far at the storm's stirring, a bed
 /// of closings at its full — and where there is no storm the
-/// colony is quiet, the way the slack water is quiet. And,
+/// colony is quiet, the way the slack water is quiet. And the
+/// colony has a word in its calm, the way it has a word in its
+/// weather: where there is no storm the colony opens, sparsely,
+/// at its own pace — one soft chime, the colony's one opening
+/// voice, the way no two shells open together — and when a new
+/// life completes its becoming, the sixty seconds of layering,
+/// the colony opens to it: a small ring of the colony's own
+/// light, going out once, and the chime, the loudest the opening
+/// is — and a moment later the water is the water again, and
+/// does not remember the becoming, the way it forgets
+/// everything. And,
 /// rarely, in the night, the moon crosses the water: a broad
 /// beam of the sky's cold light, drifting across it, the colony
 /// lit by the sky for a while, the motes catching the beam, the
@@ -132,6 +142,16 @@ struct ContentView: View {
     // long as the light lasts, and no longer
     @State private var handTrail: [WakeSample] = []
 
+    // the opening: the colony's word in its calm, and the new
+    // life's first adult breath, witnessed — a bloom of the
+    // colony's own light, one slow ring, and the colony's one
+    // opening voice, opening for it. The piece keeps the witness
+    // only while the bloom lasts, and no longer: after the
+    // moment, the creature is what it is, and the piece keeps
+    // its size, not its becoming
+    @State private var bloomed: Set<Int> = []
+    @State private var blooms: [Bloom] = []
+
     // the voice: the water's own motion, heard — the tide that
     // carries the motes is what murmurs, the storm is what falls
     // as rain, and the moving hand is what swishes
@@ -156,6 +176,17 @@ struct ContentView: View {
         let point: CGPoint
         let time: Date
         let speed: Double
+    }
+
+    /// One witnessed becoming: which life, and when the piece saw
+    /// it open to the water. It is kept on the piece's own clock,
+    /// the way the colony's becoming keeps the colony's time — and
+    /// it is kept only a moment, the way the bloom lasts. Nothing
+    /// longer: after the moment the creature is what it is, and
+    /// the piece keeps its size, not its becoming.
+    struct Bloom {
+        let seed: Int
+        let at: Date
     }
 
     var body: some View {
@@ -197,7 +228,14 @@ struct ContentView: View {
     /// One telling of the voice: how fast the current is turning
     /// (the murmur), how much storm is over the water (the rain),
     /// the closing of the colony's shells where the storm tucks the
-    /// colony in (the tuck), the glint where the moon's light lies
+    /// colony in (the tuck), the opening — the colony's word in its
+    /// calm: one soft chime, sparse, at the colony's own pace, full
+    /// in the deep calm and gone at the storm's full, the way the
+    /// colony's two words turn with the weather — and the new
+    /// life's first adult breath, witnessed: a bloom of the
+    /// colony's own light, one slow ring, and the chime, the
+    /// loudest the opening is, kept a moment and forgotten the way
+    /// everything is — the glint where the moon's light lies
     /// on the moving water, the gild where the sky's light lies warm
     /// on the moving water — the sky's warm word, the sky's dark
     /// word being the rain and its cold word the glint — the swish
@@ -211,7 +249,8 @@ struct ContentView: View {
     /// lower in the water's night.
     /// The swish runs on the world's time, the way the hand's other
     /// answers do — it is the hand the water knows, not the clock
-    /// the water keeps.
+    /// the water keeps. The bloom runs on the piece's own clock,
+    /// the way the colony's becoming keeps the colony's time.
     private func speak() {
         let now = Date.now
         let vnow = now.addingTimeInterval(Self.timeOffset)
@@ -221,6 +260,31 @@ struct ContentView: View {
         let moonNow = Self.moonDrawn(t)
         let deepNow = Self.deep(t)
         let twinNow = Self.deepTwin(t)
+        // the new life's first adult breath, witnessed: the
+        // colony's becoming keeps the colony's time — the piece's
+        // own clock — and the piece sees it while it is
+        // happening, and keeps the seeing only a moment. A life
+        // that is no longer becoming is an adult, and the piece
+        // keeps its size, not its becoming
+        for barnacle in barnacles {
+            let age = vnow.timeIntervalSince(barnacle.timestamp)
+            if Self.isBecoming(age), !bloomed.contains(barnacle.seed) {
+                bloomed.insert(barnacle.seed)
+                blooms.append(Bloom(seed: barnacle.seed, at: vnow))
+            }
+        }
+        blooms.removeAll { vnow.timeIntervalSince($0.at) > 8 }
+        bloomed.subtract(barnacles.filter { vnow.timeIntervalSince($0.timestamp) > 90 }.map(\.seed))
+        // the bloom's chime: the colony's one opening voice,
+        // opening for a new life — and thin where the storm is,
+        // the way the colony's word is thin where the storm is
+        let bloomChime = min(
+            0.05,
+            blooms.map { Self.bloomChime(vnow.timeIntervalSince($0.at)) * (1 - stormNow) }.reduce(0, +)
+        )
+        // the bloom's pulse: the telling that makes the opening
+        // voice open for the new life, once, at the bloom
+        let openPulse = blooms.map { 1 - Self.smoothstep(0, 1.2, vnow.timeIntervalSince($0.at)) }.max() ?? 0
         voice.update(
             murmur: Self.spokenMurmur(
                 strengthNow: Self.tide(t).strength,
@@ -231,6 +295,8 @@ struct ContentView: View {
             ),
             rain: Self.rainGain(storm: stormNow, light: light),
             tuck: Self.tuckGain(storm: stormNow),
+            opening: Self.openingGain(storm: stormNow) + bloomChime,
+            openPulse: openPulse,
             glint: Self.glintGain(moon: moonNow, current: Self.tide(t).strength),
             gild: Self.gildGain(warmth: Self.skyWarmth(t), current: Self.tide(t).strength),
             roll: Self.rollGain(storm: stormNow, light: light),
@@ -289,6 +355,14 @@ struct ContentView: View {
                     }
                     for barnacle in barnacles {
                         drawBarnacle(&context, barnacle, size: size, now: vnow, t: t, fingerPoint: fingerPoint, presence: presence, light: light, handFlash: handFlash, storm: stormNow, moon: moonNow, moonBeamX: moonBeamX, deep: deepNow, deepCenter: deepCenter, deepTwin: deepTwinNow, deepTwinCenter: deepTwinCenter)
+                    }
+                    // the new life's first adult breath, witnessed:
+                    // a bloom of the colony's own light, one slow
+                    // ring that goes out once, over the colony, the
+                    // way a breath goes out — and gone, and
+                    // forgotten, the way the water forgets
+                    for bloom in blooms {
+                        drawBloom(&context, bloom, size: size, now: vnow, light: light)
                     }
                     for ripple in ripples {
                         drawRipple(&context, ripple, size: size, now: now)
@@ -1414,6 +1488,57 @@ struct ContentView: View {
             * (1 - Self.hushGain(deep: deep, twin: twin, t: t))
     }
 
+    // MARK: - The Opening
+
+    /// The colony's word in its calm: the opening. The colony has
+    /// a word in its weather — the tuck, the closing, when the
+    /// storm tucks it in — and its home is the calm: the water is
+    /// calm most of the water's days, and the colony was silent
+    /// at home. The opening is the colony's word at home: one soft
+    /// chime, sparse, at the colony's own pace — not the storm's,
+    /// not the tide's, its own — the way no two shells open
+    /// together. It is full in the deep calm, and gone at the
+    /// storm's full, the way the colony's two words turn with the
+    /// weather, the way a sleeper's breath turns. And the colony's
+    /// quiet word keeps below its storm word: the opening at most
+    /// 0.015, the closing at most 0.06, the way the sky's word
+    /// keeps below the body's.
+    static func openingGain(storm: Double) -> Double {
+        return 0.015 * (1 - storm)
+    }
+
+    /// The new life's first adult breath, as the piece witnesses
+    /// it: a barnacle completes its becoming — the sixty seconds
+    /// of layering, the way a barnacle layers — and the piece
+    /// sees it while it is happening: a bloom of the colony's own
+    /// light, one slow ring that goes out once, and the colony's
+    /// one opening voice opens for it, a soft chime, the loudest
+    /// the opening is. The witness window is short — the piece
+    /// sees the becoming while it is happening, and a moment
+    /// after, and not a moment longer: after that the creature is
+    /// what it is, the size the water remembers it by, and the
+    /// piece keeps its size, not its becoming.
+    static func isBecoming(_ age: Double) -> Bool {
+        return age >= 60 && age < 75
+    }
+
+    /// The bloom's own light: one slow ring of the colony's own
+    /// light, going out once — quick to come, slow to go, gone
+    /// within a few seconds, and not remembered, the way the
+    /// water's small lights are, and the way the water forgets
+    /// everything.
+    static func bloomFade(_ age: Double) -> Double {
+        return 1 - smoothstep(0.5, 6, age)
+    }
+
+    /// The bloom's chime, as a gain: the colony's one opening
+    /// voice, opening for a new life — the loudest the opening
+    /// is — quick to come, slow to go, gone within a few seconds,
+    /// and not remembered, the way everything is.
+    static func bloomChime(_ age: Double) -> Double {
+        return 0.03 * exp(-max(0, age) * 1.1)
+    }
+
     // MARK: - The Wake
 
     /// How long the wake holds before the water forgets it. It is a
@@ -1461,7 +1586,15 @@ struct ContentView: View {
     /// the storm's full — and where there is no storm the colony is
     /// quiet, the way the slack water is quiet. The colony's voice
     /// is the storm's, not the colony's: the colony speaks only
-    /// when the water is angry. And where the moon's light lies on
+    /// when the water is angry. But the colony has a word in its
+    /// calm, the way it has a word in its weather: the opening,
+    /// one soft chime, sparse, at the colony's own pace — the
+    /// colony's word at home, full in the deep calm and gone at the
+    /// storm's full, the way the colony's two words turn with the
+    /// weather — and the new life's first adult breath, witnessed:
+    /// a bloom of the colony's own light, one slow ring, and the
+    /// chime, the loudest the opening is, kept a moment and
+    /// forgotten the way everything is. And where the moon's light lies on
     /// the moving water, the water glints — small and high and
     /// sparse, the way a glint is: the sky's voice on the water,
     /// heard, and gone, and forgotten, the way the sky forgets
@@ -1745,6 +1878,48 @@ struct ContentView: View {
                 )
             )
         }
+    }
+
+    /// The bloom, drawn: one slow ring of the colony's own light,
+    /// going out once, the way a breath goes out — wider as it
+    /// goes, fainter as it goes, shown where the light from above
+    /// is gone the way the colony's own small lights are, and a
+    /// little in the day, the way a breath is seen in the day.
+    /// When it goes, the water does not remember it, the way it
+    /// forgets everything.
+    private func drawBloom(_ context: inout GraphicsContext, _ bloom: Bloom, size: CGSize, now: Date, light: Double) {
+        guard let b = barnacles.first(where: { $0.seed == bloom.seed }) else { return }
+        let age = now.timeIntervalSince(bloom.at)
+        let fade = Self.bloomFade(age)
+        guard fade > 0.004 else { return }
+        let center = CGPoint(x: b.x * size.width, y: b.y * size.height)
+        let radius = grownRadius(seed: b.seed, size: b.size, age: now.timeIntervalSince(b.timestamp))
+        // the ring goes out once, the way a breath goes out:
+        // slow, and wider as it goes
+        let p = min(1, age / 6)
+        let ringRadius = radius * (2.2 + 2.6 * p)
+        // shown where the light from above is gone, the way the
+        // colony's own small lights are — and a little in the day,
+        // the way a breath is seen in the day
+        let vis = 0.16 * fade * (0.30 + 0.70 * (1 - light))
+        context.fill(
+            Path(ellipseIn: CGRect(
+                x: center.x - ringRadius,
+                y: center.y - ringRadius,
+                width: ringRadius * 2,
+                height: ringRadius * 2
+            )),
+            with: .radialGradient(
+                Gradient(stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: Color(red: 0.55, green: 0.95, blue: 0.88).opacity(vis), location: 0.75),
+                    .init(color: .clear, location: 1),
+                ]),
+                center: center,
+                startRadius: 0,
+                endRadius: ringRadius
+            )
+        )
     }
 
     private func drawWater(_ context: inout GraphicsContext, size: CGSize, t: Double, fingerPoint: CGPoint?, presence: Double, light: Double, storm: Double, moon: Double, moonBeamX: Double, deep: Double, deepCenter: CGPoint, deepTwin: Double, deepTwinCenter: CGPoint) {

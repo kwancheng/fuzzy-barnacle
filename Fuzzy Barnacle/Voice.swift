@@ -14,7 +14,18 @@ import os.log
 /// the closing is a granular voice, made of the colony itself:
 /// sparse at the storm's stirring, a bed of closings at the
 /// storm's full, and quiet where there is no storm, the way the
-/// slack water is quiet. And where the moon's light lies on the
+/// slack water is quiet. But the colony has a word in its calm,
+/// the way it has a word in its weather: the opening, one soft
+/// chime, sparse, at the colony's own pace — the colony's word at
+/// home, full in the deep calm and gone at the storm's full, the
+/// way the colony's two words turn with the weather. The closing
+/// is eight small voices, the glint is six grains, the deep one
+/// is one — and the opening is one: the colony's quiet word, the
+/// rarest of the colony's words. And the new life's first adult
+/// breath is witnessed: when a life completes its becoming, the
+/// colony's one opening voice opens for it — a chime, once, the
+/// loudest the opening is — and a moment later the water does not
+/// remember it, the way it forgets everything. And where the moon's light lies on the
 /// moving water, the water glints: small and high and sparse, the
 /// way a glint is — the sky's voice on the water, and when the
 /// crossing passes, the sky is silent again, the way the sky is
@@ -94,6 +105,15 @@ final class WaterVoice: ObservableObject {
     private var murmurTarget: Double = 0
     private var rainTarget: Double = 0
     private var tuckTarget: Double = 0
+    // The opening: the colony's word in its calm — one soft
+    // chime, sparse, at the colony's own pace: the colony's quiet
+    // word, full in the deep calm and gone at the storm's full,
+    // the way the colony's two words turn with the weather. The
+    // piece tells the voice the opening's gain, and the bloom's
+    // pulse: the moment a new life completes its becoming, and
+    // the opening voice opens for it, once
+    private var openTarget: Double = 0
+    private var openPulseTarget: Double = 0
     private var glintTarget: Double = 0
     private var swishTarget: Double = 0
     private var deepTarget: Double = 0
@@ -158,6 +178,31 @@ final class WaterVoice: ObservableObject {
     }
     private var glinters: [Glinter] = []
     private var glintGain: Double = 0
+
+    // The colony's opening: its word in its calm — one soft
+    // chime, the way no two shells open together. The closing is
+    // eight small voices, the glint is six grains, the deep one
+    // is one — and the opening is one: the colony's quiet word,
+    // the rarest of the colony's words, full in the deep calm and
+    // gone at the storm's full. It opens when it opens, at its
+    // own pace and its own pitch, sparse, the way the calm is
+    // sparse. And when a new life completes its becoming, the
+    // opening voice opens for it — a chime, once, the loudest the
+    // opening is: the piece's pulse makes it open now, and only
+    // now. The opening breathes: a shell opens slowly, and the
+    // light it opens to goes slowly — a slow attack, a long soft
+    // tail, the way an opening is, not a closing
+    private struct Opener {
+        var baseFreq: Double
+        var freq: Double
+        var phase: Double
+        var tail: Double
+        var age: Int
+        var nextIn: Int
+        var pulsed: Bool
+    }
+    private var opener = Opener(baseFreq: 850, freq: 850, phase: 0, tail: 0, age: 0, nextIn: 0, pulsed: false)
+    private var openGain: Double = 0
 
     // The deep one's voice: the piece's first voice that is not
     // the water's — the water's voices are made of the water's
@@ -241,6 +286,10 @@ final class WaterVoice: ObservableObject {
                 weight: 0.7 + 0.3 * drawRng()
             ))
         }
+        // the colony's opening: its one opening voice, at its own
+        // pace — the next opening is somewhere in the first second,
+        // and no earlier
+        opener.nextIn = Int(drawRng() * 44_100)
     }
 
     // The voice's own quiet thread: the water's audio service is
@@ -333,7 +382,13 @@ final class WaterVoice: ObservableObject {
     /// The piece tells the voice what it is doing: how fast the
     /// current is turning (the murmur), how much storm is over the
     /// water (the rain), the closing of the colony's shells where
-    /// the storm tucks the colony in (the tuck), the glint where
+    /// the storm tucks the colony in (the tuck), the opening —
+    /// the colony's word in its calm: one soft chime, sparse, at
+    /// the colony's own pace, full in the deep calm and gone at
+    /// the storm's full, the way the colony's two words turn with
+    /// the weather — and the bloom's pulse, the moment a new life
+    /// completes its becoming, at which the opening voice opens
+    /// for it, once (the pulse), the glint where
     /// the moon's light lies on the moving water, the gild where
     /// the sky's light lies warm on the moving water — the sky's
     /// warm word, its dark word being the rain and its cold word
@@ -354,11 +409,13 @@ final class WaterVoice: ObservableObject {
     /// own account of it, the way the piece keeps the water's — and
     /// how low the voice should sit (lower, in the water's night).
     /// The voice eases toward each of them, the way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    func update(murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
         tuckTarget = tuck
+        openTarget = opening
+        openPulseTarget = openPulse
         glintTarget = glint
         gildTarget = gild
         rollTarget = roll
@@ -368,16 +425,16 @@ final class WaterVoice: ObservableObject {
         hushTarget = hush
         cutoffTarget = cutoff
         targetLock.unlock()
-        let isSpeaking = murmur + rain + tuck + glint + gild + roll + swish + deep + twin > 0.03
+        let isSpeaking = murmur + rain + tuck + opening + glint + gild + roll + swish + deep + twin > 0.03
         if isSpeaking != speaking {
             speaking = isSpeaking
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, glintTarget, gildTarget, rollTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, openTarget, openPulseTarget, glintTarget, gildTarget, rollTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -403,6 +460,13 @@ final class WaterVoice: ObservableObject {
         // storm, the way the slack water is still
         let tuckDensity = min(1, target.tuck / 0.06)
         let tuckMean = 0.08 + 2.9 * pow(1 - tuckDensity, 3)
+        // the colony's opening: the openings come in the calm —
+        // sparse, at the colony's own pace, the way no two shells
+        // open together — and thin as the storm comes, the way the
+        // colony's word thins as the storm comes: the two words
+        // turn with the weather, the way a sleeper's breath turns
+        let openDensity = min(1, target.opening / 0.015)
+        let openMean = 6.0 + 6.0 * pow(1 - openDensity, 3)
         // the sky's glint: the glints come and thicken with the
         // moon — sparse and far where the moon is low, a bed of
         // glints where it is high — and still where the moon is
@@ -487,6 +551,50 @@ final class WaterVoice: ObservableObject {
                 glintSum += sin(g.phase) * g.env * g.weight
                 glinters[gi] = g
             }
+            // the colony's opening: its one opening voice opens
+            // when it opens, at its own pace and its own pitch —
+            // sparse in the calm, the way no two shells open
+            // together — and it keeps the calm's word, not the
+            // storm's: it thins as the storm comes, the way the
+            // colony's two words turn with the weather
+            opener.age += 1
+            opener.nextIn -= 1
+            if opener.nextIn <= 0 {
+                opener.phase = 0
+                opener.age = 0
+                opener.tail = 1
+                let jitter = 0.5 + 1.5 * drawRng()
+                opener.nextIn = max(220, Int(Double(format.sampleRate) * openMean * jitter))
+                // each opening is slightly off the last, the way no
+                // two shells open together
+                opener.freq = opener.baseFreq * (0.97 + 0.06 * drawRng())
+            }
+            // the new life's first adult breath: the piece's pulse
+            // makes the opening voice open for the new life — a
+            // chime, once, at the bloom, and only once: the
+            // pulse's window is a moment, and the voice keeps it
+            // to one opening
+            if target.openPulse > 0.5, !opener.pulsed {
+                opener.pulsed = true
+                opener.phase = 0
+                opener.age = 0
+                opener.tail = 1
+                let jitter = 0.5 + 1.5 * drawRng()
+                opener.nextIn = max(Int(3.0 * Double(format.sampleRate)), Int(Double(format.sampleRate) * openMean * jitter))
+                opener.freq = opener.baseFreq * (0.97 + 0.06 * drawRng())
+            }
+            if target.openPulse <= 0.5 {
+                opener.pulsed = false
+            }
+            opener.phase += 2 * .pi * opener.freq / Double(format.sampleRate)
+            if opener.phase >= 4 * .pi { opener.phase -= 4 * .pi }
+            // the opening breathes: a shell opens slowly — a slow
+            // attack, the way a shell opens — and the light it
+            // opens to goes slowly — a long soft tail, the way
+            // light goes: an opening, not a closing
+            opener.tail *= 0.999
+            let openAttack = min(1, Double(opener.age) / (0.08 * Double(format.sampleRate)))
+            let openSum = sin(opener.phase) * openAttack * opener.tail
             // the deep one's voice: one low tone, the way a single
             // body makes a single sound — it breathes the way the
             // body breathes, and it comes up slowly and goes down
@@ -526,14 +634,17 @@ final class WaterVoice: ObservableObject {
                 * (0.75 + 0.25 * sin(2 * .pi * deepSampleClock / (Double(format.sampleRate) * 41) + 3.9))
             // the voice eases toward what the water is doing, the
             // way water eases: the murmur slowly, the rain at the
-            // storm's pace, the colony tucks in slowly, the sky
-            // glints slowly, the sky gilds slowly, the sky's dark
-            // word rolls slowly still — a bottom moves the way a
-            // bottom moves — the deep one's tone and the twin's
-            // tone slowly still, and the swish at the hand's
+            // storm's pace, the colony tucks in slowly, the colony
+            // opens slowly — the calm's word is a slow one, the
+            // way a calm is slow — the sky glints slowly, the sky
+            // gilds slowly, the sky's dark word rolls slowly still
+            // — a bottom moves the way a bottom moves — the deep
+            // one's tone and the twin's tone slowly still, and the
+            // swish at the hand's
             murmurGain += (target.murmur - murmurGain) * 0.002
             rainGain += (target.rain - rainGain) * 0.006
             tuckGain += (target.tuck - tuckGain) * 0.004
+            openGain += (target.opening - openGain) * 0.004
             glintGain += (target.glint - glintGain) * 0.004
             gildGain += (target.gild - gildGain) * 0.004
             rollGain += (target.roll - rollGain) * 0.002
@@ -548,6 +659,7 @@ final class WaterVoice: ObservableObject {
             var out = murmurLow * murmurGain * 2.4
                 + rainHiss * rainGain * 1.2
                 + tuckSum * tuckGain * 1.2
+                + openSum * openGain * 1.2
                 + glintSum * glintGain * 1.2
                 + gildLow * gildGain * 1.2
                 + rollLow * rollGain * rollSwell * 1.2
@@ -563,7 +675,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, glint %f, roll %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, glintGain, rollGain, deepToneGain, twinToneGain, gildGain, target.hush)
+            os_log("fb voice: level %f (tuck %f, open %f, glint %f, roll %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, openGain, glintGain, rollGain, deepToneGain, twinToneGain, gildGain, target.hush)
         }
     }
 }

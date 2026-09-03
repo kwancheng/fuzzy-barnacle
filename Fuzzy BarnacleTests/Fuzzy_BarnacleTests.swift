@@ -1239,4 +1239,95 @@ struct Fuzzy_BarnacleTests {
         )
     }
 
+    // The opening: the colony's word in its calm. The tuck is the
+    // colony's word in its weather — the closing, when the storm
+    // tucks it in. The opening is the colony's word at home: one
+    // soft chime, sparse, at the colony's own pace — full in the
+    // deep calm, gone at the storm's full, the way the two words
+    // turn with the weather. And the new life's first adult
+    // breath, witnessed: a bloom of the colony's own light, one
+    // slow ring, and the chime, the loudest the opening is.
+
+    @Test func theColonyOpensInTheCalm() {
+        #expect(ContentView.openingGain(storm: 0) == 0.015, "in the deep calm the colony's opening is full")
+        #expect(ContentView.openingGain(storm: 1) == 0, "at the storm's full the opening is gone")
+        // the opening thins with the storm, the way the colony's
+        // word thins with the storm
+        var prev = 1.0
+        for i in 0...20 {
+            let v = ContentView.openingGain(storm: Double(i) / 20)
+            #expect(v <= prev + 0.000_001, "the opening thins with the storm")
+            prev = v
+        }
+        // forty-eight hours of the water's clock: the water is
+        // mostly calm, and the colony is open at home, the way the
+        // water is calm most of the time
+        var openSeconds = 0
+        for i in 0..<172_800 {
+            if ContentView.openingGain(storm: ContentView.storm(Double(i))) >= 0.014 {
+                openSeconds += 1
+            }
+        }
+        #expect(openSeconds > 150_000, "the colony opens at home most of the time, the way the water is calm most of the time")
+    }
+
+    @Test func theTwoWordsTurnWithTheWeather() {
+        // the colony's two words: the closing, the storm's — the
+        // opening, the calm's. They turn with the weather, the way
+        // a sleeper's breath turns: where the closing is full the
+        // opening is gone, and the two together never run past the
+        // colony's storm word
+        #expect(
+            ContentView.openingGain(storm: 0) > 0 && ContentView.tuckGain(storm: 0) == 0,
+            "where the opening is full the closing is none"
+        )
+        #expect(
+            ContentView.tuckGain(storm: 1) > 0 && ContentView.openingGain(storm: 1) == 0,
+            "where the closing is full the opening is gone"
+        )
+        for i in 0...20 {
+            let s = Double(i) / 20
+            #expect(
+                ContentView.tuckGain(storm: s) + ContentView.openingGain(storm: s) <= 0.06 + 0.000_001,
+                "the two words together never run past the colony's storm word"
+            )
+        }
+    }
+
+    @Test func aNewLifesFirstBreathIsSeen() {
+        // the piece sees the becoming while it is happening: the
+        // window is the moment after the accretion completes, and
+        // a moment after — and not a moment longer
+        #expect(ContentView.isBecoming(60), "the becoming is witnessed as it completes")
+        #expect(ContentView.isBecoming(74.9), "and a moment after")
+        #expect(!ContentView.isBecoming(59), "a life still accreting is not becoming yet")
+        #expect(!ContentView.isBecoming(75), "after the moment, the creature is what it is")
+        #expect(
+            !ContentView.isBecoming(3600),
+            "a life settled an hour ago is an adult: the piece keeps its size, not its becoming"
+        )
+        // the bloom's light: quick to come, slow to go, and gone
+        #expect(ContentView.bloomFade(0.5) == 1, "the bloom is full at once")
+        #expect(ContentView.bloomFade(6) == 0, "the bloom is gone within six seconds")
+        let mid = ContentView.bloomFade(3)
+        #expect(mid > 0 && mid < 1, "the bloom fades slowly, the way the water's small lights fade")
+    }
+
+    @Test func theOpeningKeepsBelowTheClosing() {
+        // the colony's quiet word keeps below its storm word, the
+        // way the sky's word keeps below the body's: the opening
+        // at most 0.015, the closing at most 0.06 — and even the
+        // new life's chime, the loudest the opening is, keeps
+        // below the closing's full
+        #expect(
+            ContentView.openingGain(storm: 0) < ContentView.tuckGain(storm: 1),
+            "the colony's quiet word is far below its storm word"
+        )
+        #expect(
+            ContentView.bloomChime(0) < ContentView.tuckGain(storm: 1),
+            "the loudest opening keeps below the closing's full"
+        )
+        #expect(ContentView.bloomChime(4) < 0.001, "the chime is gone within a few seconds, and not remembered")
+    }
+
 }
