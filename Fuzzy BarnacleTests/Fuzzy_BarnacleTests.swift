@@ -1598,4 +1598,104 @@ struct Fuzzy_BarnacleTests {
         )
     }
 
+    // MARK: - The Ending
+
+    @Test func aLifeEndsOfItsOwn() {
+        // the colony's own calendar: each life is two and a half
+        // days to four and a half of the water's clock, at its own
+        // pace — the way no two lives end together, the way no two
+        // shells open together: the water keeps the body for the
+        // body's own life, and not a moment more, the way the life
+        // is the life
+        var lifespans: Set<Double> = []
+        for i in 0..<1000 {
+            let life = ContentView.lifespan(i &* 0x9E37_79B9)
+            #expect(life > 2.5 * 86_400, "the life is at least two and a half days of the water's clock, the way the life is long")
+            #expect(life <= 4.5 * 86_400, "and at most four and a half days, the way the life is the life")
+            lifespans.insert(life)
+        }
+        #expect(lifespans.count > 100, "each life keeps its own pace, the way no two lives end together")
+    }
+
+    @Test func theEndingIsAThinning() {
+        // the ending is a thinning, not a vanishing: before the
+        // last four minutes of the life the creature is what it
+        // is, the way the creature is the creature; within them
+        // the creature thins, half-thinned at the middle of the
+        // window, the way a thinning thins; and at the life's end
+        // the ending is done, the way the ending is the end of the
+        // life — going one way only, the way the ending goes one
+        // way only
+        let seed = 0x54453421
+        let life = ContentView.lifespan(seed)
+        #expect(ContentView.endingProgress(life - 300, seed) == 0, "before the last four minutes the creature is what it is, the way the creature is the creature")
+        #expect(ContentView.endingProgress(life, seed) == 1, "at the life's end the ending is done, the way the ending is the end of the life")
+        #expect(
+            abs(ContentView.endingProgress(life - 120, seed) - 0.5) < 0.05,
+            "at the middle of the window the thinning is half done, the way a thinning thins"
+        )
+        var monotone = true
+        var previous = 0.0
+        for s in stride(from: life - 240, through: life, by: 6.0) {
+            let progress = ContentView.endingProgress(s, seed)
+            if progress < previous {
+                monotone = false
+            }
+            previous = progress
+        }
+        #expect(monotone, "the thinning goes one way only, the way the ending goes one way only")
+    }
+
+    @Test func theLeavingIsAMomentOfTheLife() {
+        // the last four minutes of a life that is two and a half
+        // days or more: the leaving is a moment of the life, the
+        // way the leaving is the leaving — the way the end of a
+        // long life is a moment of it, the way the end is the end
+        for i in 0..<1000 {
+            let life = ContentView.lifespan(i &* 0x9E37_79B9)
+            #expect(
+                ContentView.endingWindow / life < 0.02,
+                "the leaving is a small part of the life, the way the moment is a small part of the life"
+            )
+        }
+    }
+
+    @Test func theColonysGoingKeepsTheWatersKnowing() {
+        // the colony's going is known the way the hand's going is
+        // known: the same grain, one for the going, whether the
+        // hand's or the colony's, the way the piece keeps its own
+        // account of its own voices — the going's grain keeping
+        // below the colony's quiet word, the way the small keeps
+        // below the large, and below the closing's full, the way
+        // the piece keeps its own account of its own voices
+        #expect(ContentView.goingGain(0) == 0.005, "the water knows the going, the way the water knows the going")
+        #expect(
+            ContentView.goingGain(0) < ContentView.openingGain(storm: 0),
+            "the going's grain keeps below the colony's quiet word, the way the small keeps below the large"
+        )
+        #expect(
+            ContentView.goingGain(0) < ContentView.tuckGain(storm: 1),
+            "and below the closing's full, the way the piece keeps its own account of its own voices"
+        )
+    }
+
+    @Test func theTraceMatchesTheCreatureThatWas() {
+        // the colony's trace is kept at the size the creature had
+        // when it left — and the creature, at its end, had long
+        // since finished growing, the way the creature is what it
+        // is: the grown radius at the life's end is the adult
+        // size, the way the becoming is the becoming, and the
+        // trace matches the creature that was, the way the trace
+        // matches the creature that was
+        let seed = 0x1234
+        #expect(
+            ContentView.grownRadius(seed: seed, size: 20, age: 3 * 86_400) == ContentView.adultSize(seed: seed, size: 20),
+            "the grown radius at the life's end is the adult size, the way the creature is what it is"
+        )
+        #expect(
+            ContentView.adultSize(seed: seed, size: 20) > 20,
+            "it had already grown, the way the becoming is the becoming"
+        )
+    }
+
 }

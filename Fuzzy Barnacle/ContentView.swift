@@ -237,7 +237,12 @@ struct ContentView: View {
         .onAppear { voice.start() }
         .onDisappear { voice.stop() }
         .task {
-            // the water forgets: traces are kept for a while, then gone
+            // the water forgets: traces are kept for a while, then
+            // gone — and the colony's own goings are kept the same
+            // way: the life that reaches its end is let go, the
+            // trace takes the shape of the absence, and the knowing
+            // is kept a moment, and forgotten, the way the water
+            // forgets everything
             while !Task.isCancelled {
                 pruneGhosts()
                 try? await Task.sleep(for: .seconds(20))
@@ -328,14 +333,30 @@ struct ContentView: View {
         // world's time, the way the hand's other answers do, and
         // the water keeps the knowing only a moment, the way it
         // keeps everything
-        let comings = witnesses
-            .filter { $0.kind == .coming }
-            .map { Self.comingGain(now.timeIntervalSince($0.at)) }
-            .reduce(0, +)
-        let goings = witnesses
-            .filter { $0.kind == .going }
-            .map { Self.goingGain(now.timeIntervalSince($0.at)) }
-            .reduce(0, +)
+        // and the colony's own goings run through the same
+        // knowing: the water knows a life has left it, the way it
+        // knows the going the hand leaves — one grain for the
+        // going, whether the hand's or the colony's, the way the
+        // piece keeps its own account of its own voices: however
+        // many lives come or go at the same moment, the knowing
+        // stays at the full of the one — the water knows the
+        // coming and the going, not the count of the comings and
+        // the goings, the way the count is the count and the
+        // knowing is the knowing
+        let comings = min(
+            Self.comingGain(0),
+            witnesses
+                .filter { $0.kind == .coming }
+                .map { Self.comingGain(now.timeIntervalSince($0.at)) }
+                .reduce(0, +)
+        )
+        let goings = min(
+            Self.goingGain(0),
+            witnesses
+                .filter { $0.kind == .going }
+                .map { Self.goingGain(now.timeIntervalSince($0.at)) }
+                .reduce(0, +)
+        )
         witnesses.removeAll { now.timeIntervalSince($0.at) > 12 }
         voice.update(
             murmur: Self.spokenMurmur(
@@ -376,9 +397,33 @@ struct ContentView: View {
     }
 
     private func pruneGhosts() {
-        let cutoff = Date.now.addingTimeInterval(-170)
+        let now = Date.now
+        let vnow = now.addingTimeInterval(Self.timeOffset)
+        let cutoff = now.addingTimeInterval(-170)
         for ghost in ghosts where ghost.departedAt < cutoff {
             modelContext.delete(ghost)
+        }
+        // the colony's own goings: the life that has reached its
+        // end is gone — not pried off by the hand, let go of its
+        // own, the way a life lets go — and the trace takes the
+        // shape of the absence at the size the creature had when it
+        // left, the way the trace takes the shape of the absence
+        // the hand leaves, and the water knows the going, the way
+        // it knows the going the hand leaves: the knowing is the
+        // water's, not the hand's, kept a moment on the world's
+        // time, like the hand's other answers, and forgotten, the
+        // way the water forgets everything
+        for barnacle in barnacles where vnow.timeIntervalSince(barnacle.timestamp) >= Self.lifespan(barnacle.seed) {
+            let trace = Ghost(
+                departedAt: now,
+                x: barnacle.x,
+                y: barnacle.y,
+                seed: barnacle.seed,
+                size: Self.adultSize(seed: barnacle.seed, size: barnacle.size)
+            )
+            modelContext.insert(trace)
+            witnesses.append(Witness(seed: barnacle.seed, kind: .going, at: now))
+            modelContext.delete(barnacle)
         }
     }
 
@@ -550,7 +595,7 @@ struct ContentView: View {
             x: nearest.x,
             y: nearest.y,
             seed: nearest.seed,
-            size: grownRadius(seed: nearest.seed, size: nearest.size, age: Date.now.addingTimeInterval(Self.timeOffset).timeIntervalSince(nearest.timestamp))
+            size: Self.grownRadius(seed: nearest.seed, size: nearest.size, age: Date.now.addingTimeInterval(Self.timeOffset).timeIntervalSince(nearest.timestamp))
         )
         modelContext.insert(trace)
         modelContext.delete(nearest)
@@ -628,11 +673,24 @@ struct ContentView: View {
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
+                // the leaving runs on the water's clock, like the
+                // ending itself: the life that has reached its end
+                // thins on the water's time, and the caption reads
+                // the water's now, the way the deep is read and the
+                // hush is read
+                if let leavingLine = leavingLine(for: vnow) {
+                    Text(leavingLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
                 // the knowing of the comings and the goings runs on
                 // world time, like the hand's other answers: the
                 // witnesses keep the world's time, not the shifted
                 // clock, so the caption reads them on the world's
-                // now, the way the voice does
+                // now, the way the voice does — and the going it
+                // knows is the going the hand leaves or the going
+                // the colony lets go, the way the knowing is the
+                // water's, not the hand's
                 if let comingLine = comingLine(for: timeline.date) {
                     Text(comingLine)
                         .font(.system(.caption2, design: .serif).italic())
@@ -798,6 +856,28 @@ struct ContentView: View {
     private func goingLine(for now: Date) -> String? {
         guard witnesses.contains(where: { $0.kind == .going && now.timeIntervalSince($0.at) < 12 }) else { return nil }
         return "a life has left the water"
+    }
+
+    /// The leaving, as the caption keeps it: the life that has
+    /// reached its end is thinning, and the caption says so — for
+    /// the last four minutes of the water's clock, while the
+    /// ending is the ending — and then, a moment later, the going
+    /// takes over the word, "a life has left the water," the way
+    /// the going is the going, and a moment after that the caption
+    /// keeps its silence, the way the caption keeps its silence
+    /// about the water itself. The count counts the staying, and
+    /// this names the leaving, which the count does not name, the
+    /// way the coming is named and the going is named, and the
+    /// leaving is named, the way the piece names the moments the
+    /// count does not name.
+    private func leavingLine(for now: Date) -> String? {
+        let leaving = barnacles.filter {
+            Self.endingProgress(now.timeIntervalSince($0.timestamp), $0.seed) > 0.02
+        }
+        guard !leaving.isEmpty else { return nil }
+        return leaving.count == 1
+            ? "a life is leaving the water"
+            : "lives are leaving the water"
     }
 
     // MARK: - The Current
@@ -1721,7 +1801,13 @@ struct ContentView: View {
     }
 
     /// The water's knowing of a going: a life is pried off, and the
-    /// water knows a life has left it. The trace holds the shape
+    /// water knows a life has left it — or a life reaches its end
+    /// and lets go of its own, the colony's own going, and the
+    /// water knows that too, the way it knows the going the hand
+    /// leaves: the knowing is the water's, not the hand's, one
+    /// grain for the going, whether the hand's or the colony's,
+    /// the way the piece keeps its own account of its own voices.
+    /// The trace holds the shape
     /// of the absence — kept a while, then dissolved, then pruned,
     /// the way the water forgets — and this is the knowing itself:
     /// one small grain, a little deeper than the coming's, a
@@ -1734,6 +1820,61 @@ struct ContentView: View {
     /// the piece keeps its own account of its own voices.
     static func goingGain(_ age: Double) -> Double {
         return 0.005 * exp(-max(0, age) * 0.35)
+    }
+
+    // MARK: - The Ending
+
+    /// The last stretch of a life: the four minutes of the water's
+    /// clock in which the creature thins — the breath stops, the
+    /// orifice closes, the plumes fold, and the creature becomes
+    /// the rock it was, the way a life becomes the rock it was.
+    /// The ending is a thinning, not a vanishing: the creature
+    /// holds, then thins, and then goes, and the trace takes the
+    /// shape of the absence at the size the creature had when it
+    /// left, the way the trace takes the shape of the absence the
+    /// hand leaves.
+    static let endingWindow: Double = 240
+
+    /// The length of a life, on the water's clock: two and a half
+    /// days to four and a half, at the life's own pace — the way
+    /// no two lives end together, the way no two shells open
+    /// together. The piece's own calendar is long, the way a life
+    /// is long: the water keeps the body, the way the water keeps
+    /// the body, for the body's own life, and not a moment more.
+    static func lifespan(_ seed: Int) -> Double {
+        return 86_400 * (2.5 + 2.0 * Self.fuzz(seed, 61))
+    }
+
+    /// How far the ending has gone: zero while the life is the
+    /// life, and one when the life is done. Before the last four
+    /// minutes the creature is what it is, the way the creature is
+    /// the creature; within them, the creature thins, the way a
+    /// life thins; and at the life's end the ending is done, the
+    /// way the ending is the end of the life.
+    static func endingProgress(_ age: Double, _ seed: Int) -> Double {
+        let life = Self.lifespan(seed)
+        return Self.smoothstep(life - Self.endingWindow, life, age)
+    }
+
+    /// Whether the life is done: at the life's end the creature is
+    /// gone, and the trace takes the shape of the absence, the
+    /// way the trace takes the shape of the absence. The colony
+    /// goes without the hand — the going is the colony's, not the
+    /// hand's — and the water knows it the way it knows the going
+    /// the hand leaves: the knowing is the water's, not the
+    /// hand's.
+    static func isGone(_ age: Double, _ seed: Int) -> Bool {
+        return age >= Self.lifespan(seed)
+    }
+
+    /// The size the creature had when it left: a life that has
+    /// reached its end had long since finished growing, the way
+    /// the creature is what it is — the trace is kept at the
+    /// creature's full size, the way the trace matches the
+    /// creature that was, the way the trace matches the creature
+    /// that was.
+    static func adultSize(seed: Int, size: Double) -> Double {
+        return size * (1.15 + 0.45 * Self.fuzz(seed, 9))
     }
 
     // MARK: - The Wake
@@ -2106,8 +2247,8 @@ struct ContentView: View {
     /// accretes slowly — layer over layer, the way real ones do — to its
     /// adult size across the first minute of its life. After that it is
     /// what it is: the size the water remembers it by.
-    private func grownRadius(seed: Int, size: Double, age: Double) -> Double {
-        let adult = size * (1.15 + 0.45 * Self.fuzz(seed, 9))
+    static func grownRadius(seed: Int, size: Double, age: Double) -> Double {
+        let adult = Self.adultSize(seed: seed, size: size)
         let p = min(1, age / 60)
         let eased = 1 - pow(1 - p, 2)
         return size + (adult - size) * eased
@@ -2182,7 +2323,7 @@ struct ContentView: View {
         let fade = Self.bloomFade(age)
         guard fade > 0.004 else { return }
         let center = CGPoint(x: b.x * size.width, y: b.y * size.height)
-        let radius = grownRadius(seed: b.seed, size: b.size, age: now.timeIntervalSince(b.timestamp))
+        let radius = Self.grownRadius(seed: b.seed, size: b.size, age: now.timeIntervalSince(b.timestamp))
         // the ring goes out once, the way a breath goes out:
         // slow, and wider as it goes
         let p = min(1, age / 6)
@@ -2717,24 +2858,38 @@ struct ContentView: View {
         let settleScale = settleProgress >= 1 ? 1 : easeOutBack(settleProgress)
 
         // accretion: it settled small, and has been growing ever since
-        let grown = grownRadius(seed: seed, size: barnacle.size, age: age)
+        let grown = Self.grownRadius(seed: seed, size: barnacle.size, age: age)
 
         // settling into the rock: with age the breathing slows, and the
         // creature answers the current less eagerly — the old have seen
         // the tide, and turn to it only when it comes close
         let ageSettle = Self.smoothstep(120, 1800, age)
 
+        // the ending: the life that has reached its end thins — the
+        // breath stops, the orifice closes, the plumes fold, and the
+        // creature becomes the rock it was, the way a life becomes the
+        // rock it was. The ending is a thinning, not a vanishing: the
+        // creature holds, then thins, and then goes, and the trace
+        // takes the shape of the absence at the size the creature had
+        // when it left, the way the trace takes the shape of the
+        // absence the hand leaves
+        let ending = Self.endingProgress(age, seed)
+
         // breathing and drifting — the anchored body leans into the
-        // current, the way a holdfast leans into the sea
+        // current, the way a holdfast leans into the sea — and the
+        // creature that is ending rests where it is, the way the
+        // last of a life is the last of a life
         let tideNow = Self.tide(t)
         let breathePhase = 2 * .pi * Self.fuzz(seed, 50)
         let driftPhase = 2 * .pi * Self.fuzz(seed, 51)
         let lean = 4.5 * tideNow.strength * (0.7 + 0.6 * Self.fuzz(seed, 56))
-        var swayX = sin(t * 0.35 + driftPhase) * 3 + cos(tideNow.angle) * lean
-        var swayY = cos(t * 0.27 + driftPhase * 1.31) * 3 + sin(tideNow.angle) * lean
+        var swayX = (sin(t * 0.35 + driftPhase) * 3 + cos(tideNow.angle) * lean) * (1 - 0.85 * ending)
+        var swayY = (cos(t * 0.27 + driftPhase * 1.31) * 3 + sin(tideNow.angle) * lean) * (1 - 0.85 * ending)
         // the surge: in the storm the anchored bodies shudder with
-        // the water, each at its own rate
-        let shudder = 2.4 * storm
+        // the water, each at its own rate — and the creature that is
+        // ending does not shudder, the way the last of a life is the
+        // last of a life
+        let shudder = 2.4 * storm * (1 - ending)
         if shudder > 0.01 {
             swayX += sin(t * (1.7 + 0.9 * Self.fuzz(seed, 58)) + driftPhase) * shudder
             swayY += cos(t * (1.9 + 0.7 * Self.fuzz(seed, 59)) + driftPhase * 1.31) * shudder * 0.6
@@ -2784,8 +2939,11 @@ struct ContentView: View {
         // whole colony slows its breath, the way sleepers slow under
         // a passing shadow
         let rest = 1 - light
+        // and the creature that is ending stops breathing, the way
+        // the last of a life is the last of a life — the breath
+        // goes, and the body keeps still at the last
         let breath = 1
-            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle) * (1 - 0.4 * rest) * (1 - 0.5 * storm) * (1 - 0.35 * deepLocal)
+            + (0.02 + 0.03 * attention) * (1 - 0.5 * ageSettle) * (1 - 0.4 * rest) * (1 - 0.5 * storm) * (1 - 0.35 * deepLocal) * (1 - ending)
             * sin(t * (0.7 * (1 - 0.35 * ageSettle)) + breathePhase)
 
         let center = CGPoint(
@@ -2832,7 +2990,8 @@ struct ContentView: View {
             : shell
 
         // fuzzy halo, swelling softly as the barnacle wakes — and hugging
-        // closer to the body as it settles into the rock
+        // closer to the body as it settles into the rock — and thinning
+        // at the ending, the way the light of a life thins with the life
         let haloR = radius * (1.9 + 0.6 * attention) * (1 - 0.15 * ageSettle)
         context.fill(
             Path(ellipseIn: CGRect(
@@ -2842,7 +3001,7 @@ struct ContentView: View {
                 height: haloR * 2
             )),
             with: .radialGradient(
-                Gradient(colors: [agedShell.opacity(0.28 + 0.10 * attention), .clear]),
+                Gradient(colors: [agedShell.opacity((0.28 + 0.10 * attention) * (1 - 0.9 * ending)), .clear]),
                 center: center,
                 startRadius: radius * 0.2,
                 endRadius: haloR
@@ -2876,8 +3035,10 @@ struct ContentView: View {
         // the self-light: in the water's night the colony is lit by
         // its own faint glow, and a moving hand stirs that glow
         // brighter, and the glow lingers a moment after the hand is
-        // gone
-        let selfLight = 0.045 * rest + 0.12 * flashLocal
+        // gone — and the glow of the life that is ending goes with
+        // the life, the way the light of a life is the life's: the
+        // trace that remains is the mineral, not the glow
+        let selfLight = (0.045 * rest + 0.12 * flashLocal) * (1 - ending)
         if selfLight > 0.004 {
             context.fill(
                 Path(ellipseIn: CGRect(
@@ -2901,7 +3062,9 @@ struct ContentView: View {
         // the moon's light: while the crossing is over this water
         // the creature is lit by the sky, over its own light — and
         // when the crossing passes, the sky does not remember the
-        // creature, the way the water does not remember the sky
+        // creature, the way the water does not remember the sky. The
+        // sky's light lies on the surface that thins, the way the
+        // light lies on what it lies on
         if moonLocal > 0.02 {
             context.fill(
                 Path(ellipseIn: CGRect(
@@ -2912,7 +3075,7 @@ struct ContentView: View {
                 )),
                 with: .radialGradient(
                     Gradient(colors: [
-                        Color(red: 0.78, green: 0.86, blue: 1.0).opacity(0.10 * moonLocal),
+                        Color(red: 0.78, green: 0.86, blue: 1.0).opacity(0.10 * moonLocal * (1 - 0.7 * ending)),
                         .clear,
                     ]),
                     center: center,
@@ -2942,12 +3105,18 @@ struct ContentView: View {
                 height: lobeRadius * 2
             ))
         }
-        context.fill(body, with: .color(agedShell))
+        // and the body itself thins at the ending, the way the life
+        // thins: the creature becomes the rock it was, a thin
+        // mineral film, and then goes, and the trace takes the
+        // shape of the absence
+        context.fill(body, with: .color(agedShell.opacity(1 - 0.85 * ending)))
         if attention > 0.01 {
-            context.fill(body, with: .color(.white.opacity(0.05 * attention)))
+            context.fill(body, with: .color(.white.opacity(0.05 * attention * (1 - ending))))
         }
 
-        // shell plates
+        // shell plates — the shell is what remains, the way the
+        // shell is the shell: the plates thin less than the body
+        // does, the way the mineral is the mineral
         let plateCount = 4 + Int(Self.fuzz(seed, 60) * 3)
         for i in 0..<plateCount {
             let angle = 2 * .pi * Self.fuzz(seed, 70 + i) + 0.35 * sin(t * 0.21 + Double(i) * 1.7)
@@ -2963,13 +3132,16 @@ struct ContentView: View {
             plateContext.rotate(by: .radians(angle + .pi / 2))
             plateContext.fill(
                 Path(ellipseIn: CGRect(x: -long / 2, y: -short / 2, width: long, height: short)),
-                with: .color(plate.opacity(0.30))
+                with: .color(plate.opacity(0.30 * (1 - 0.5 * ending)))
             )
         }
 
         // the orifice at the centre — it dilates toward the current;
-        // the old, whose patience has run deep, open less
-        let orif = radius * (0.10 + 0.22 * attention * (1 - 0.4 * ageSettle))
+        // the old, whose patience has run deep, open less — and at
+        // the ending the orifice closes, the way a life closes, the
+        // way the colony tucks at its last, the way the colony
+        // tucks in its weather: the end is the colony's last tuck
+        let orif = radius * (0.10 + 0.22 * attention * (1 - 0.4 * ageSettle)) * (1 - 0.85 * ending)
         context.fill(
             Path(ellipseIn: CGRect(
                 x: center.x - orif,
@@ -2989,7 +3161,7 @@ struct ContentView: View {
                 )),
                 with: .radialGradient(
                     Gradient(colors: [
-                        Color(red: 0.72, green: 0.92, blue: 0.90).opacity(0.30 * attention),
+                        Color(red: 0.72, green: 0.92, blue: 0.90).opacity(0.30 * attention * (1 - ending)),
                         .clear,
                     ]),
                     center: center,
@@ -3018,18 +3190,25 @@ struct ContentView: View {
             // little, the way they fold under anything that moves
             // the water — not the tuck: the deep one is not weather
             * (1 - 0.25 * deepLocal)
+            // and the colony at its ending folds its plumes, the
+            // way the feeder stops feeding, the way the ending is
+            // the end of the feeding
+            * (1 - 0.6 * ending)
         var plumeAngle = plumeBase
         var plumeVis = 0.14 + 0.10 * tideNow.strength
         if attention > cirriThreshold {
             let beyond = (attention - cirriThreshold) / max(0.25, 1 - cirriThreshold)
             plumeAngle = Self.blendAngle(plumeBase, angleToFinger, min(1.0, 1.5 * attention))
-            plumeReach = max(plumeReach, radius * (0.55 + 0.65 * beyond))
+            plumeReach = max(plumeReach, radius * (0.55 + 0.65 * beyond) * (1 - 0.6 * ending))
             plumeVis = max(plumeVis, 0.32 * beyond + 0.10)
         }
         // in the water's night the plumes are seen by the colony's
         // own light, not by the light from above — shorter, and
-        // fainter, the way sleepers reach
+        // fainter, the way sleepers reach — and at the ending the
+        // plumes go, the way the feeder stops feeding, the way the
+        // ending is the end of the feeding
         plumeVis = plumeVis * (0.55 + 0.45 * light) + 0.05 * (1 - light)
+        plumeVis *= (1 - 0.7 * ending)
         let cirriCount = 6
         for i in 0..<cirriCount {
             let spread = (Double(i) - Double(cirriCount - 1) / 2) * 0.55
@@ -3059,7 +3238,9 @@ struct ContentView: View {
             )
         }
 
-        // a sliver of surface light on the upper-left
+        // a sliver of surface light on the upper-left — and the
+        // light thins with the creature, the way the light of a
+        // life is the life's
         context.fill(
             Path(ellipseIn: CGRect(
                 x: center.x - radius * 0.75,
@@ -3068,7 +3249,7 @@ struct ContentView: View {
                 height: radius * 0.4
             )),
             with: .radialGradient(
-                Gradient(colors: [Color.white.opacity(0.22), .clear]),
+                Gradient(colors: [Color.white.opacity(0.22 * (1 - ending)), .clear]),
                 center: CGPoint(x: center.x - radius * 0.47, y: center.y - radius * 0.65),
                 startRadius: 0,
                 endRadius: radius * 0.45
