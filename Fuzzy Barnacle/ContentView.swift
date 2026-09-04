@@ -152,6 +152,15 @@ struct ContentView: View {
     @State private var bloomed: Set<Int> = []
     @State private var blooms: [Bloom] = []
 
+    // the water's knowing of the comings and the goings: a new
+    // life settles, and the water knows a life has come to it; a
+    // life is pried off, and the water knows a life has left it.
+    // The piece keeps the witness only a moment, the way a
+    // witness is a witness — and then forgets it, the way the
+    // water forgets everything: the water keeps the body and the
+    // trace, and not the knowing
+    @State private var witnesses: [Witness] = []
+
     // the voice: the water's own motion, heard — the tide that
     // carries the motes is what murmurs, the storm is what falls
     // as rain, and the moving hand is what swishes
@@ -186,6 +195,26 @@ struct ContentView: View {
     /// the piece keeps its size, not its becoming.
     struct Bloom {
         let seed: Int
+        let at: Date
+    }
+
+    /// One witnessed coming or going: which life, which of the two,
+    /// and when. The piece has always kept the bodies — the colony
+    /// in the store, the trace of the gone one, kept a while and
+    /// pruned — and the faces of the two moments: the ripple where
+    /// a life settles, the small ripple where one is pried off.
+    /// What it did not keep was the knowing itself — the water
+    /// knowing a life has come to it, the water knowing a life has
+    /// left it. This keeps it a moment, the way a witness is a
+    /// witness, and no longer: the water keeps the body and the
+    /// trace, and not the knowing.
+    struct Witness {
+        enum Kind {
+            case coming
+            case going
+        }
+        let seed: Int
+        let kind: Kind
         let at: Date
     }
 
@@ -250,7 +279,11 @@ struct ContentView: View {
     /// The swish runs on the world's time, the way the hand's other
     /// answers do — it is the hand the water knows, not the clock
     /// the water keeps. The bloom runs on the piece's own clock,
-    /// the way the colony's becoming keeps the colony's time.
+    /// the way the colony's becoming keeps the colony's time. And
+    /// the water knows the comings and the goings — a life
+    /// settling, a life pried off: a small grain each, kept a
+    /// moment, and forgotten, the way the water keeps the body and
+    /// the trace, and not the knowing.
     private func speak() {
         let now = Date.now
         let vnow = now.addingTimeInterval(Self.timeOffset)
@@ -285,6 +318,25 @@ struct ContentView: View {
         // the bloom's pulse: the telling that makes the opening
         // voice open for the new life, once, at the bloom
         let openPulse = blooms.map { 1 - Self.smoothstep(0, 1.2, vnow.timeIntervalSince($0.at)) }.max() ?? 0
+        // the water's knowing of the comings and the goings: a
+        // life settles, and the water knows a life has come to it
+        // — a small grain, gone in a few seconds, and not
+        // remembered; a life is pried off, and the water knows a
+        // life has left it — a smaller grain, a little deeper, a
+        // little longer: a loss is quieter than a coming, and a
+        // loss lingers a moment longer. The hand keeps the
+        // world's time, the way the hand's other answers do, and
+        // the water keeps the knowing only a moment, the way it
+        // keeps everything
+        let comings = witnesses
+            .filter { $0.kind == .coming }
+            .map { Self.comingGain(now.timeIntervalSince($0.at)) }
+            .reduce(0, +)
+        let goings = witnesses
+            .filter { $0.kind == .going }
+            .map { Self.goingGain(now.timeIntervalSince($0.at)) }
+            .reduce(0, +)
+        witnesses.removeAll { now.timeIntervalSince($0.at) > 12 }
         voice.update(
             murmur: Self.spokenMurmur(
                 strengthNow: Self.tide(t).strength,
@@ -313,6 +365,12 @@ struct ContentView: View {
             deep: Self.deepGain(deepNow),
             twin: Self.deepTwinGain(twinNow),
             hush: Self.hushGain(deep: deepNow, twin: twinNow, t: t),
+            // the water's knowing of the comings and the goings —
+            // the coming's grain, and the going's: the small keeps
+            // below the large, the way the piece keeps its own
+            // account of its own voices
+            coming: comings,
+            going: goings,
             cutoff: 240 + 660 * (0.3 + 0.7 * light)
         )
     }
@@ -463,6 +521,12 @@ struct ContentView: View {
         )
         modelContext.insert(barnacle)
         spawnRipple(CGPoint(x: unitX, y: unitY), kind: .settle)
+        // the water knows a life has come to it — the ripple is
+        // the coming's face, and the witness is its knowing, kept
+        // a moment, and forgotten, the way the water forgets
+        // everything. The hand keeps the world's time, the way
+        // the hand's other answers do
+        witnesses.append(Witness(seed: barnacle.seed, kind: .coming, at: now))
     }
 
     private func pryOff(at point: CGPoint, in size: CGSize) {
@@ -490,6 +554,11 @@ struct ContentView: View {
         )
         modelContext.insert(trace)
         modelContext.delete(nearest)
+        // the water knows a life has left it — the trace holds the
+        // shape of the absence, and the witness is the knowing
+        // itself, kept a moment, and forgotten, the way the water
+        // forgets everything
+        witnesses.append(Witness(seed: nearest.seed, kind: .going, at: .now))
     }
 
     private func spawnRipple(_ unitPoint: CGPoint, kind: Ripple.Kind) {
@@ -556,6 +625,21 @@ struct ContentView: View {
                 }
                 if let skitterLine = skitterLine(for: vnow) {
                     Text(skitterLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+                // the knowing of the comings and the goings runs on
+                // world time, like the hand's other answers: the
+                // witnesses keep the world's time, not the shifted
+                // clock, so the caption reads them on the world's
+                // now, the way the voice does
+                if let comingLine = comingLine(for: timeline.date) {
+                    Text(comingLine)
+                        .font(.system(.caption2, design: .serif).italic())
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+                if let goingLine = goingLine(for: timeline.date) {
+                    Text(goingLine)
                         .font(.system(.caption2, design: .serif).italic())
                         .foregroundStyle(.white.opacity(0.25))
                 }
@@ -683,6 +767,37 @@ struct ContentView: View {
         )
         guard skitter >= 0.012 else { return nil }
         return "the quick ones skitter"
+    }
+
+    /// The water's knowing of a coming, as the caption keeps it: a
+    /// new life settles, and the caption says so — for a moment,
+    /// while the water knows it, the way a witness is a witness.
+    /// The count line counts the colony, the way it counts; this
+    /// names the moment of the coming itself, which the count does
+    /// not name. And a moment later the water forgets the coming,
+    /// the way it forgets everything, and the caption keeps its
+    /// silence, the way the caption keeps its silence about the
+    /// water itself. The witnesses keep the world's time (the hand's
+    /// other answers do too), so this reads the world's now — on the
+    /// shifted clock the knowing would read as old before it has
+    /// happened.
+    private func comingLine(for now: Date) -> String? {
+        guard witnesses.contains(where: { $0.kind == .coming && now.timeIntervalSince($0.at) < 8 }) else { return nil }
+        return "a new life has come to the water"
+    }
+
+    /// The water's knowing of a going, as the caption keeps it: a
+    /// life is pried off, and the caption says so — for a moment,
+    /// while the water knows it. The trace holds the shape of the
+    /// absence, the way the water remembers the gone one a while
+    /// and then forgets it; the caption keeps the knowing, not the
+    /// trace, and keeps it a moment, the way the knowing is a
+    /// moment: a loss lingers a moment longer than a coming, and
+    /// the caption lingers with it, and then the water is the
+    /// water again.
+    private func goingLine(for now: Date) -> String? {
+        guard witnesses.contains(where: { $0.kind == .going && now.timeIntervalSince($0.at) < 12 }) else { return nil }
+        return "a life has left the water"
     }
 
     // MARK: - The Current
@@ -1582,6 +1697,45 @@ struct ContentView: View {
         return 0.03 * exp(-max(0, age) * 1.1)
     }
 
+    // MARK: - The Coming And The Going
+
+    /// The water's knowing of a coming: a new life settles, and the
+    /// water knows a life has come to it. The ripple is the
+    /// coming's face — the small slow ring where the life arrives —
+    /// and this is the knowing itself: one small grain in the
+    /// water's voice, quick to come, and gone in a few seconds,
+    /// and not remembered, the way the water forgets everything.
+    /// The piece has always witnessed the becoming — the sixty
+    /// seconds of layering, the bloom, the chime — and did not
+    /// know the moment of the coming itself, the way a colony
+    /// keeps the creature and not the arrival. The knowing is the
+    /// water's, not the hand's: it runs on the world's time, the
+    /// way the hand's other answers do, and it is the same in the
+    /// day and in the night, the way the water's knowing is the
+    /// water's. The coming's grain keeps below the colony's quiet
+    /// word, the way the small keeps below the large: 0.008
+    /// against the opening's 0.015, and the piece's account of its
+    /// voices is kept.
+    static func comingGain(_ age: Double) -> Double {
+        return 0.008 * exp(-max(0, age) * 0.5)
+    }
+
+    /// The water's knowing of a going: a life is pried off, and the
+    /// water knows a life has left it. The trace holds the shape
+    /// of the absence — kept a while, then dissolved, then pruned,
+    /// the way the water forgets — and this is the knowing itself:
+    /// one small grain, a little deeper than the coming's, a
+    /// little quieter, and a little longer: a loss is quieter than
+    /// a coming, and a loss lingers a moment longer, the way a loss
+    /// lingers. 0.005 against the coming's 0.008, and the two
+    /// together — a coming and a going at the same moment, the
+    /// piece keeping both — never run past the colony's quiet word
+    /// of 0.015, the way the small keeps below the large, the way
+    /// the piece keeps its own account of its own voices.
+    static func goingGain(_ age: Double) -> Double {
+        return 0.005 * exp(-max(0, age) * 0.35)
+    }
+
     // MARK: - The Wake
 
     /// How long the wake holds before the water forgets it. It is a
@@ -1657,6 +1811,26 @@ struct ContentView: View {
     /// in the same deep — the rarest weather heard at its bottom —
     /// and when the storm passes the roll goes with it, and the
     /// water does not remember it, the way it forgets everything.
+    /// And the water knows the comings and the goings — a life
+    /// settling, the water knowing a life has come to it, a small
+    /// grain, and a life pried off, the water knowing a life has
+    /// left it, a smaller grain, a little deeper, a little
+    /// longer: a loss is quieter than a coming, and a loss lingers
+    /// a moment longer. The piece has always witnessed the
+    /// becoming — the bloom, the chime — and did not know the
+    /// coming itself, the way it did not know the going, and
+    /// knows them now, a moment each, and forgets them, the way
+    /// it forgets everything: the water keeps the body and the
+    /// trace, and not the knowing. The coming's grain keeps below
+    /// the colony's quiet word, the going's keeps below the
+    /// coming's, and the two together never run past the opening's
+    /// full, the way the small keeps below the large, the way the
+    /// piece keeps its own account of its own voices: the closing
+    /// is eight small voices, the glint is six grains, the deep
+    /// one is one voice, the opening is one, the quick ones are
+    /// five, and the water's knowing of the comings and the
+    /// goings is one each — one grain for the coming, one grain
+    /// for the going, the way the small keeps below the large.
 
     /// How much of the water's low voice is up at a moment: the
     /// voice is the *turning* of the current — the change of the

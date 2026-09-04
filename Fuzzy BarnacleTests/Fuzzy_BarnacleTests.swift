@@ -1505,4 +1505,97 @@ struct Fuzzy_BarnacleTests {
         )
     }
 
+    // The water's knowing of the comings and the goings: a life
+    // settles, and the water knows a life has come to it — a small
+    // grain; a life is pried off, and the water knows a life has
+    // left it — a smaller grain, a little deeper, a little longer:
+    // a loss is quieter than a coming, and a loss lingers a moment
+    // longer. The piece has always witnessed the becoming — the
+    // bloom, the chime — and did not know the coming itself, the
+    // way it did not know the going, and knows them now, a moment
+    // each, and forgets them, the way the water keeps the body and
+    // the trace, and not the knowing. The closing is eight small
+    // voices, the glint is six grains, the deep one is one, the
+    // opening is one, the quick ones are five, and the water's
+    // knowing of the comings and the goings is one each — one
+    // grain for the coming, one grain for the going.
+
+    @Test func theWaterKnowsAComing() {
+        // the coming's grain: full at the moment of the settling,
+        // quick to come, and gone in a few seconds, and not
+        // remembered, the way the water forgets everything
+        #expect(ContentView.comingGain(0) == 0.008, "the knowing is full at the moment of the coming")
+        // the grain goes, the way the knowing goes, the way the
+        // water's small lights go
+        var prev = ContentView.comingGain(0)
+        for i in 1...20 {
+            let v = ContentView.comingGain(Double(i))
+            #expect(v < prev, "the coming's grain goes, the way the knowing goes")
+            prev = v
+        }
+        #expect(ContentView.comingGain(10) < 0.000_1, "the coming is gone within a few seconds, and not remembered")
+    }
+
+    @Test func theWaterKnowsAGoing() {
+        // the going's grain: a little quieter than the coming's —
+        // a loss is quieter than a coming — and a little longer: a
+        // loss lingers a moment longer than a coming, the way a
+        // loss lingers
+        #expect(ContentView.goingGain(0) == 0.005, "the knowing of the going is small, the way a loss is small")
+        #expect(
+            ContentView.goingGain(0) < ContentView.comingGain(0),
+            "a loss is quieter than a coming"
+        )
+        for t in [4.0, 6.0, 10.0, 14.0] {
+            #expect(
+                ContentView.goingGain(t) > ContentView.comingGain(t),
+                "a loss lingers a moment longer than a coming"
+            )
+        }
+    }
+
+    @Test func theKnowingsKeepBelowTheQuietWords() {
+        // the small keeps below the large, the way the piece keeps
+        // its own account of its own voices: the coming's grain
+        // below the colony's quiet word, the going's below the
+        // coming's, and the two together — a coming and a going at
+        // the same moment, the piece keeping both — never run past
+        // the opening's full
+        #expect(
+            ContentView.comingGain(0) < ContentView.openingGain(storm: 0),
+            "the coming's grain keeps below the colony's quiet word"
+        )
+        #expect(
+            ContentView.goingGain(0) < ContentView.comingGain(0),
+            "the going's grain keeps below the coming's"
+        )
+        #expect(
+            ContentView.comingGain(0) + ContentView.goingGain(0) < ContentView.openingGain(storm: 0),
+            "a coming and a going at the same moment keep below the colony's quiet word"
+        )
+        #expect(
+            ContentView.comingGain(0) + ContentView.goingGain(0) < ContentView.tuckGain(storm: 1),
+            "and below the closing's full, the way the small keeps below the large"
+        )
+    }
+
+    @Test func theWaterForgetsTheComingAndTheGoing() {
+        // the water keeps the body and the trace, and not the
+        // knowing: the knowing of the coming and the knowing of the
+        // going are both gone within a moment, and not remembered,
+        // the way the water forgets everything — the trace holds a
+        // while on its own, and the water forgets the knowing long
+        // before it forgets the trace
+        var forgotten = 0
+        for i in stride(from: 15, to: 30, by: 1) {
+            if ContentView.comingGain(Double(i)) < 0.000_1 && ContentView.goingGain(Double(i)) < 0.000_1 {
+                forgotten += 1
+            }
+        }
+        #expect(
+            forgotten == 15,
+            "by fifteen seconds the water has forgotten the coming and the going, the way it forgets everything"
+        )
+    }
+
 }

@@ -107,6 +107,29 @@ import os.log
 /// closing's full, the way the small keeps below the large, the
 /// way the piece keeps its own account of its own voices.
 ///
+/// And the water knows the comings and the goings: a life
+/// settles, and the water knows a life has come to it — one small
+/// grain, high and brief, the small life's touch on the water's
+/// surface, gone in a few seconds, and not remembered — and a life
+/// is pried off, and the water knows a life has left it — one
+/// small grain a little deeper, a little quieter, and a little
+/// longer: a loss is quieter than a coming, and a loss lingers a
+/// moment longer, the way a loss lingers. The piece has always
+/// witnessed the becoming — the bloom, the chime, the loudest the
+/// opening is — and did not know the coming itself, the way it did
+/// not know the going, and knows them now, a moment each, and
+/// forgets them, the way it forgets everything: the water keeps
+/// the body and the trace, and not the knowing. The coming's grain
+/// keeps below the colony's quiet word — 0.008 against the
+/// opening's 0.015 — the going's keeps below the coming's, and the
+/// two together never run past the opening's full, the way the
+/// small keeps below the large, the way the piece keeps its own
+/// account of its own voices: the closing is eight small voices,
+/// the glint is six grains, the deep one is one voice, the opening
+/// is one, the quick ones are five, and the water's knowing of the
+/// comings and the goings is one each — one grain for the coming,
+/// one grain for the going.
+///
 /// The voice is made, not played: noise the water itself draws,
 /// shaped by the same functions that move the water. Nothing in it
 /// is a recording; everything in it is the water.
@@ -170,6 +193,18 @@ final class WaterVoice: ObservableObject {
     // the piece tells the voice how hushed the water's own speech
     // is, the way the piece tells it everything
     private var hushTarget: Double = 0
+    // The water's knowing of the comings and the goings: the
+    // settling of a new life — the water knows a life has come to
+    // it — and the prying of one — the water knows a life has left
+    // it. One grain each, small: the coming's below the colony's
+    // quiet word, the going's below the coming's, the way the
+    // small keeps below the large. The piece tells the voice the
+    // knowing's gain, and the voice eases toward it, the way a
+    // small voice eases — and when the knowing is gone the grain
+    // is gone, and the water does not remember it, the way it
+    // forgets everything
+    private var comingTarget: Double = 0
+    private var goingTarget: Double = 0
     private var cutoffTarget: Double = 500
 
     // The render state, touched only on the audio thread.
@@ -265,6 +300,39 @@ final class WaterVoice: ObservableObject {
     private var skitterers: [Skitterer] = []
     private var skitterGain: Double = 0
 
+    // The water's knowing of the comings and the goings: one grain
+    // each, the way the deep one is one voice and the opening is
+    // one — the closing is eight small voices, the glint is six
+    // grains, the quick ones are five, and the knowing is one
+    // each. The coming's grain is the small life's touch on the
+    // water's surface: a small tick, mid-band and brief, higher
+    // than the colony's closings the way the small life is smaller
+    // than the colony, and gone in a moment, the way the knowing
+    // is a moment. The going's grain is a little deeper — a loss
+    // is a going-down, the way a loss is — and a little quieter,
+    // and a little longer, the way a loss lingers
+    private struct Settler {
+        var baseFreq: Double
+        var freq: Double
+        var phase: Double
+        var env: Double
+        var nextIn: Int
+        var weight: Double
+    }
+    private var settler = Settler(baseFreq: 2200, freq: 2200, phase: 0, env: 0, nextIn: 0, weight: 1.0)
+    private var settlerGain: Double = 0
+
+    private struct Leaver {
+        var baseFreq: Double
+        var freq: Double
+        var phase: Double
+        var env: Double
+        var nextIn: Int
+        var weight: Double
+    }
+    private var leaver = Leaver(baseFreq: 800, freq: 800, phase: 0, env: 0, nextIn: 0, weight: 1.0)
+    private var leaverGain: Double = 0
+
     // The deep one's voice: the piece's first voice that is not
     // the water's — the water's voices are made of the water's
     // motion; the deep one is a body, and a body has a voice of
@@ -351,6 +419,13 @@ final class WaterVoice: ObservableObject {
         // pace — the next opening is somewhere in the first second,
         // and no earlier
         opener.nextIn = Int(drawRng() * 44_100)
+        // the water's knowing of the comings and the goings: one
+        // grain each, at its own pace — the coming's grains come
+        // at the settling's pace, a handful over the knowing's few
+        // seconds, and the going's a little farther apart, the way
+        // a loss is a slower thing
+        settler.nextIn = Int(drawRng() * 44_100)
+        leaver.nextIn = Int(drawRng() * 44_100)
         // the quick ones' skitter: five small high voices, one per
         // quick one, the way the quick ones are five — higher and
         // shorter still than the glint's grains: the quick ones'
@@ -491,10 +566,15 @@ final class WaterVoice: ObservableObject {
     /// hush — how much of the water's own speech is
     /// thinned where a body of the deep is in the water: the murmur
     /// arrives already thinned, and the hush is kept as the piece's
-    /// own account of it, the way the piece keeps the water's — and
-    /// how low the voice should sit (lower, in the water's night).
-    /// The voice eases toward each of them, the way water eases.
-    func update(murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, skitter: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    /// own account of it, the way the piece keeps the water's — the
+    /// coming and the going — the water's knowing of the comings
+    /// and the goings: a life settling, a life pried off, one
+    /// grain each, small, kept a moment, and forgotten, the way
+    /// the water keeps the body and the trace, and not the
+    /// knowing — and how low the voice should sit (lower, in the
+    /// water's night). The voice eases toward each of them, the
+    /// way water eases.
+    func update(murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, skitter: Double, swish: Double, deep: Double, twin: Double, hush: Double, coming: Double, going: Double, cutoff: Double) {
         targetLock.lock()
         murmurTarget = murmur
         rainTarget = rain
@@ -509,6 +589,8 @@ final class WaterVoice: ObservableObject {
         deepTarget = deep
         twinTarget = twin
         hushTarget = hush
+        comingTarget = coming
+        goingTarget = going
         cutoffTarget = cutoff
         targetLock.unlock()
         let isSpeaking = murmur + rain + tuck + opening + glint + gild + roll + skitter + swish + deep + twin > 0.03
@@ -517,10 +599,10 @@ final class WaterVoice: ObservableObject {
         }
     }
 
-    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, skitter: Double, swish: Double, deep: Double, twin: Double, hush: Double, cutoff: Double) {
+    private func pullTargets() -> (murmur: Double, rain: Double, tuck: Double, opening: Double, openPulse: Double, glint: Double, gild: Double, roll: Double, skitter: Double, swish: Double, deep: Double, twin: Double, hush: Double, coming: Double, going: Double, cutoff: Double) {
         targetLock.lock()
         defer { targetLock.unlock() }
-        return (murmurTarget, rainTarget, tuckTarget, openTarget, openPulseTarget, glintTarget, gildTarget, rollTarget, skitterTarget, swishTarget, deepTarget, twinTarget, hushTarget, cutoffTarget)
+        return (murmurTarget, rainTarget, tuckTarget, openTarget, openPulseTarget, glintTarget, gildTarget, rollTarget, skitterTarget, swishTarget, deepTarget, twinTarget, hushTarget, comingTarget, goingTarget, cutoffTarget)
     }
 
     private func render(frameCount: AVAudioFrameCount, outputData: UnsafeMutablePointer<AudioBufferList>) {
@@ -573,6 +655,8 @@ final class WaterVoice: ObservableObject {
         var tuckSum: Double = 0
         var glintSum: Double = 0
         var skitterSum: Double = 0
+        var settlerSum: Double = 0
+        var leaverSum: Double = 0
         for frame in 0..<Int(frameCount) {
             // the water's own noise: a draw of white, remembered
             // into brown
@@ -672,6 +756,38 @@ final class WaterVoice: ObservableObject {
                 skitterSum += sin(sk.phase) * sk.env * sk.weight
                 skitterers[si] = sk
             }
+            // the water's knowing of the comings and the goings:
+            // one grain each, at its own pace — the coming's
+            // grains come a handful over the knowing's few seconds,
+            // and the going's a little farther apart, the way a
+            // loss is a slower thing: a small tick, and the going's
+            // a little deeper and a little longer, the way a loss
+            // lingers — each grain slightly off the last, the way
+            // no two moments are the same
+            settler.nextIn -= 1
+            if settler.nextIn <= 0 {
+                settler.env = 1
+                settler.phase = 0
+                let jitter = 0.5 + 1.5 * drawRng()
+                settler.nextIn = max(441, Int(Double(format.sampleRate) * 0.9 * jitter))
+                settler.freq = settler.baseFreq * (0.97 + 0.06 * drawRng())
+            }
+            settler.phase += 2 * .pi * settler.freq / Double(format.sampleRate)
+            if settler.phase >= 4 * .pi { settler.phase -= 4 * .pi }
+            settler.env *= 0.997
+            settlerSum += sin(settler.phase) * settler.env * settler.weight
+            leaver.nextIn -= 1
+            if leaver.nextIn <= 0 {
+                leaver.env = 1
+                leaver.phase = 0
+                let jitter = 0.5 + 1.5 * drawRng()
+                leaver.nextIn = max(441, Int(Double(format.sampleRate) * 1.4 * jitter))
+                leaver.freq = leaver.baseFreq * (0.97 + 0.06 * drawRng())
+            }
+            leaver.phase += 2 * .pi * leaver.freq / Double(format.sampleRate)
+            if leaver.phase >= 4 * .pi { leaver.phase -= 4 * .pi }
+            leaver.env *= 0.999
+            leaverSum += sin(leaver.phase) * leaver.env * leaver.weight
             // the colony's opening: its one opening voice opens
             // when it opens, at its own pace and its own pitch —
             // sparse in the calm, the way no two shells open
@@ -776,6 +892,13 @@ final class WaterVoice: ObservableObject {
             // the startle settles back the way a scatter settles
             // back, the way the quick ones drift back
             skitterGain += (target.skitter - skitterGain) * 0.003
+            // the water's knowing of the comings and the goings: a
+            // small voice eases the way a small voice eases — quick
+            // to come, the way the knowing comes, and gone the way
+            // the water forgets, the way the water forgets
+            // everything
+            settlerGain += (target.coming - settlerGain) * 0.005
+            leaverGain += (target.going - leaverGain) * 0.005
             // the roll's own rolling: two incommensurate swells —
             // the roll comes and goes within the storm, the way a
             // storm comes and goes within itself — and within the
@@ -795,6 +918,14 @@ final class WaterVoice: ObservableObject {
                 // voice, kept smallest in the mix, the way the
                 // quick ones are the piece's smallest motion
                 + skitterSum * skitterGain * 0.8
+                // the water's knowing of the comings and the
+                // goings — one grain each, small: the coming's
+                // grain keeps below the colony's quiet word, the
+                // going's keeps below the coming's, the way the
+                // small keeps below the large, the way the piece
+                // keeps its own account of its own voices
+                + settlerSum * settlerGain
+                + leaverSum * leaverGain
                 + swishHiss * swishGain
                 + deepTone
                 + twinTone
@@ -807,7 +938,7 @@ final class WaterVoice: ObservableObject {
         framesSinceLevelLog -= Int(frameCount)
         if framesSinceLevelLog <= 0 {
             framesSinceLevelLog = Int(44_100 * 8)
-            os_log("fb voice: level %f (tuck %f, open %f, glint %f, roll %f, skit %f, deep %f, twin %f, gild %f, hush %f)", level, tuckGain, openGain, glintGain, rollGain, skitterGain, deepToneGain, twinToneGain, gildGain, target.hush)
+            os_log("fb voice: level %f (tuck %f, open %f, glint %f, roll %f, skit %f, deep %f, twin %f, gild %f, hush %f, come %f, go %f)", level, tuckGain, openGain, glintGain, rollGain, skitterGain, deepToneGain, twinToneGain, gildGain, target.hush, settlerGain, leaverGain)
         }
     }
 }
